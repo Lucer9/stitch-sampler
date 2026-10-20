@@ -31,7 +31,7 @@ function swatch(el: HTMLCanvasElement, reduce: boolean) {
   };
   draw(end);
   el.dataset.ready = '';
-  if (reduce) return;
+  if (reduce || el.dataset.still !== undefined) return;
   const host = el.closest<HTMLElement>('a, [data-swatch-host]') ?? el;
   let raf = 0;
   let t0 = 0;

@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { STITCHES, FAMILIES } from '../lib/stitches.ts';
+import { STITCHES } from '../lib/stitches.ts';
 
 interface Props {
   title: string;
@@ -9,6 +9,8 @@ interface Props {
 }
 
 const { title, description, image = '/og.jpg' } = Astro.props;
+/** Menu columns; a short family shares a column with the next. */
+const COLS = [['Lines'], ['Loops'], ['Crossed', 'Fills'], ['Knots']];
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const full = title === 'Sampler' ? 'Sampler — an animated field guide to embroidery stitches' : `${title} · Sampler`;
 ---
@@ -45,27 +47,35 @@ const full = title === 'Sampler' ? 'Sampler — an animated field guide to embro
         </nav>
       </div>
       <div id="stitch-menu" class="menu" popover>
-        <div class="fams">
-          {FAMILIES.map((f) => (
-            <section>
-              <h2 class="eyebrow">{f.name}</h2>
-              <ul>
-                {STITCHES.map((st, k) => ({ st, k })).filter(({ st }) => st.family === f.name).map(({ st, k }) => (
-                  <li>
-                    <a href={`/stitches/${st.slug}/`} aria-current={Astro.url.pathname === `/stitches/${st.slug}/` ? 'page' : undefined}>
-                      <span class="mini"><canvas data-swatch={st.slug} data-zoom="2.2" aria-hidden="true"></canvas></span>
-                      <span class="nm"><span class="num">{String(k + 1).padStart(2, '0')}</span> {st.name}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
+        <figure class="look" aria-hidden="true">
+          <canvas></canvas>
+          <figcaption><span class="look-n"></span><span class="look-u"></span></figcaption>
+        </figure>
+        <div class="cols">
+          {COLS.map((col) => (
+            <div class="col">
+              {col.map((fam) => (
+                <section>
+                  <h2 class="eyebrow">{fam}</h2>
+                  <ul>
+                    {STITCHES.map((st, k) => ({ st, k })).filter(({ st }) => st.family === fam).map(({ st, k }) => (
+                      <li>
+                        <a href={`/stitches/${st.slug}/`} data-look={st.slug} aria-current={Astro.url.pathname === `/stitches/${st.slug}/` ? 'page' : undefined}>
+                          <span class="mini"><canvas data-swatch={st.slug} data-zoom="2.2" data-still aria-hidden="true"></canvas></span>
+                          <span class="nm"><span class="num">{String(k + 1).padStart(2, '0')}</span> {st.name}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
           ))}
+          <a class="every" href="/#stitches">
+            See all 25 with what each is for
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
         </div>
-        <a class="every" href="/#stitches">
-          See all 25 with what each is for
-          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
       </div>
     </header>
     <main>
@@ -84,9 +94,11 @@ const full = title === 'Sampler' ? 'Sampler — an animated field guide to embro
 
 <script>
   import { mountSwatches } from '../lib/swatch.ts';
-  const menu = document.getElementById('stitch-menu')!;
-  menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => menu.hidePopover()));
-  document.fonts.ready.then(() => mountSwatches());
+  import { mountMenu } from '../lib/menu.ts';
+  document.fonts.ready.then(() => {
+    mountSwatches();
+    mountMenu();
+  });
 </script>
 
 <style>
@@ -148,11 +160,11 @@ const full = title === 'Sampler' ? 'Sampler — an animated field guide to embro
   }
   .menu {
     position: fixed;
-    inset: 76px 0 auto;
-    width: min(1120px, calc(100vw - 32px));
-    max-height: calc(100dvh - 92px);
+    inset: 72px 0 auto;
+    width: min(1180px, calc(100vw - 32px));
+    max-height: calc(100dvh - 88px);
     margin: 0 auto;
-    padding: 22px 22px 14px;
+    padding: 18px;
     overflow: auto;
     border: 0;
     border-radius: 22px;
@@ -160,61 +172,91 @@ const full = title === 'Sampler' ? 'Sampler — an animated field guide to embro
     color: var(--ink);
     box-shadow: 0 30px 80px -24px rgba(50, 30, 10, 0.45), 0 2px 8px rgba(50, 30, 10, 0.08);
     opacity: 0;
-    translate: 0 -8px;
-    transition: opacity 0.18s ease, translate 0.18s ease, display 0.18s allow-discrete, overlay 0.18s allow-discrete;
+    translate: 0 -6px;
+    transition: opacity 0.16s ease, translate 0.16s ease, display 0.16s allow-discrete, overlay 0.16s allow-discrete;
   }
   .menu:popover-open {
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    gap: 22px;
     opacity: 1;
     translate: 0 0;
   }
   @starting-style {
     .menu:popover-open {
       opacity: 0;
-      translate: 0 -8px;
+      translate: 0 -6px;
     }
   }
-  .menu::backdrop {
-    background: rgba(30, 20, 10, 0.12);
+  .look {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    margin: 0;
   }
-  .fams {
+  .look canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 16px;
+    box-shadow: inset 0 0 0 1px rgba(60, 40, 15, 0.12);
+  }
+  .look figcaption {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px 18px;
+    gap: 4px;
+    padding: 12px 4px 0;
   }
-  .fams h2 {
-    margin: 0 0 8px 8px;
+  .look-n {
+    font: 600 20px/1.15 var(--serif);
   }
-  .fams ul {
+  .look-u {
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-content: start;
+    gap: 6px 14px;
+  }
+  .col {
+    display: grid;
+    align-content: start;
+    gap: 18px;
+  }
+  .cols h2 {
+    margin: 4px 0 6px 8px;
+  }
+  .cols ul {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
     gap: 2px;
   }
-  .fams a {
+  .cols a[data-look] {
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 52px;
-    padding: 4px 8px 4px 4px;
+    min-height: 48px;
+    padding: 3px 8px 3px 3px;
     border-radius: 12px;
     color: var(--ink);
     text-decoration: none;
     font: 500 14.5px/1.2 var(--sans);
-    transition: background-color 0.15s ease;
+    transition: background-color 0.12s ease;
   }
-  .fams a:hover,
-  .fams a:focus-visible {
+  .cols a[data-look]:hover,
+  .cols a[data-look]:focus-visible {
     background: var(--paper-2);
   }
-  .fams a[aria-current='page'] {
-    background: var(--paper-2);
+  .cols a[aria-current='page'] {
     box-shadow: inset 3px 0 0 var(--accent);
   }
   .mini {
     flex: none;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
     overflow: hidden;
     background: #eee2c7;
@@ -231,11 +273,13 @@ const full = title === 'Sampler' ? 'Sampler — an animated field guide to embro
     font-size: 12.5px;
   }
   .every {
+    grid-column: 1 / -1;
+    justify-self: start;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     min-height: 44px;
-    margin-top: 10px;
+    margin-top: 4px;
     padding: 0 8px;
     font: 600 14.5px/1 var(--sans);
     color: var(--ink);
@@ -247,42 +291,30 @@ const full = title === 'Sampler' ? 'Sampler — an animated field guide to embro
     height: 18px;
   }
   @media (max-width: 1000px) {
-    .fams {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    .menu:popover-open {
+      display: block;
+    }
+    .look {
+      display: none;
     }
   }
   @media (max-width: 640px) {
     .menu {
       inset: 68px 0 auto;
-      padding: 16px 12px 10px;
+      padding: 14px 10px 8px;
     }
-    .fams {
+    .cols {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 14px 6px;
     }
-    .fams a {
+    .cols a[data-look] {
       gap: 8px;
       font-size: 14px;
     }
     .mini {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
     }
-  }
-  .foot {
-    margin-top: 120px;
-    padding: 40px 0 56px;
-    border-top: 1px solid var(--line);
-  }
-  .made {
-    max-width: 60ch;
-    color: var(--ink-2);
-    font-size: 15px;
-  }
-  .made a {
-    color: var(--ink);
-    text-underline-offset: 3px;
-    text-decoration-color: var(--accent);
   }
   @media (max-width: 560px) {
     nav a:last-child {
