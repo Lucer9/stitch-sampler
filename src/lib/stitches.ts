@@ -290,9 +290,10 @@ export function whipped(o: Op[], path: V[], st: number, gap: number, whip: Threa
 
 export function couch(o: Op[], path: V[], laid: Thread, tack: Thread, gap: number) {
   const P = track(path);
-  const via = Array.from({ length: 7 }, (_, k) => P.p(((k + 1) * P.L) / 8));
+  const nv = Math.max(7, Math.ceil(P.L / 2.5));
+  const via = Array.from({ length: nv }, (_, k) => P.p(((k + 1) * P.L) / (nv + 1)));
   o.push(up(P.p(0), { th: laid }), down(P.p(P.L), { via }));
-  const h = laid.width * 0.5 + tack.width * 0.6;
+  const h = laid.width * 0.5 + tack.width * 0.35;
   const n = Math.max(1, Math.round(P.L / gap));
   for (let k = 0; k < n; k++) {
     const s = ((k + 0.5) * P.L) / n;
