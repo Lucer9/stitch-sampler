@@ -1,0 +1,352 @@
+---
+import Base from '../layouts/Base.astro';
+import StitchCard from '../components/StitchCard.astro';
+import { STITCHES, FAMILIES } from '../lib/stitches.ts';
+
+const kit = [
+  { name: 'A hoop', note: 'Wood or plastic, 4 to 6 inches. It keeps the fabric drum-tight so stitches stay even.', icon: 'hoop' },
+  { name: 'Needles', note: 'Embroidery needles in sizes 5 to 9. A blunt tapestry needle for whipping and weaving, a long milliner’s needle for bullions.', icon: 'needle' },
+  { name: 'Floss', note: 'Six-strand cotton. Pull out two or three strands for fine lines, use all six for bold ones.', icon: 'floss' },
+  { name: 'Fabric', note: 'Medium-weight cotton or linen with a tight, even weave. Wash and iron it first.', icon: 'fabric' },
+  { name: 'Small scissors', note: 'Sharp tips for snipping close to the fabric.', icon: 'scissors' },
+  { name: 'A water-soluble pen', note: 'For drawing your design. A damp cloth wipes the lines away when you are done.', icon: 'pen' },
+];
+---
+<Base title="Sampler" description="Learn hand embroidery with 25 animated stitches. Watch the needle move hole by hole, flip the hoop to see the back, and practise each stitch yourself.">
+  <section class="hero wrap">
+    <div class="copy">
+      <p class="eyebrow">An animated field guide to hand embroidery</p>
+      <h1>Learn to embroider, <em>one hole at a time.</em></h1>
+      <p class="lede">
+        Twenty-five stitches, drawn needle move by needle move. Slow any of them down, flip the hoop to see the back,
+        then tap the holes yourself to check you've got it.
+      </p>
+      <div class="cta">
+        <a class="btn" href="/stitches/running-stitch/">
+          Start with running stitch
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn ghost" href="#stitches">Browse all 25</a>
+      </div>
+    </div>
+    <figure class="art">
+      <div class="hoopwrap">
+        <canvas class="sampler" role="img" aria-label="An embroidery hoop with a floral wreath sampler being stitched by a needle, using all 25 stitches on this site."></canvas>
+        <div class="tip" aria-hidden="true"></div>
+      </div>
+      <figcaption>
+        <span>This sampler stitches itself with all 25 stitches. Hover a motif to see which one it is.</span>
+        <button type="button" class="again" data-replay>
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4.5H9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Stitch it again
+        </button>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="read wrap" aria-labelledby="read-h">
+    <h2 id="read-h" class="eyebrow">Reading the hoop</h2>
+    <ul>
+      <li>
+        <span class="pill up">1 ↑</span>
+        <p><strong>Up.</strong> The needle comes up from the back of the fabric at this hole.</p>
+      </li>
+      <li>
+        <span class="pill down">2 ↓</span>
+        <p><strong>Down.</strong> The needle goes down through the fabric here.</p>
+      </li>
+      <li>
+        <span class="pill dash" aria-hidden="true"><svg viewBox="0 0 40 8"><path d="M2 4h36" stroke="currentColor" stroke-width="2.2" stroke-dasharray="4 4" stroke-linecap="round"/></svg></span>
+        <p><strong>Behind.</strong> A dotted line is the thread travelling across the back. Flip the hoop to see it.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section id="stitches" class="families wrap" aria-label="All stitches">
+    {FAMILIES.map((f) => {
+      const list = STITCHES.map((s, i) => ({ s, n: i + 1 })).filter(({ s }) => s.family === f.name);
+      return (
+        <section class="family" aria-labelledby={`f-${f.name}`}>
+          <header>
+            <h2 id={`f-${f.name}`}>{f.name}</h2>
+            <p>{f.blurb}</p>
+            <span class="count">{list.length} stitches</span>
+          </header>
+          <div class="grid">
+            {list.map(({ s, n }) => <StitchCard s={s} n={n} />)}
+          </div>
+        </section>
+      );
+    })}
+  </section>
+
+  <section id="kit" class="kit wrap" aria-labelledby="kit-h">
+    <header>
+      <h2 id="kit-h">What you need</h2>
+      <p>Everything fits in a shoebox, and a beginner kit costs about as much as lunch.</p>
+    </header>
+    <ul>
+      {kit.map((k) => (
+        <li>
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            {k.icon === 'hoop' && (<><circle cx="24" cy="26" r="17" /><circle cx="24" cy="26" r="13" /><path d="M20 6.5h8M21 9V6.5M27 9V6.5M18 6.5h-2" /></>)}
+            {k.icon === 'needle' && (<><path d="M10 40 38 8" /><path d="M35.6 11.8l1.6-1.8" stroke-width="1.2" /><path d="M14 36c6 2 8-6 14-4s4 9-2 9" stroke="var(--accent)" /></>)}
+            {k.icon === 'floss' && (<><rect x="12" y="10" width="24" height="28" rx="6" /><path d="M12 17h24M12 31h24" /><path d="M16 17v14M20 17v14M24 17v14M28 17v14M32 17v14" stroke="var(--accent)" /></>)}
+            {k.icon === 'fabric' && (<><path d="M9 9h30v30H9z" /><path d="M9 16h30M9 23h30M9 30h30M16 9v30M23 9v30M30 9v30" stroke-width="1" opacity=".6" /><path d="M14 27l8-8m0 8-8-8" stroke="var(--accent)" /></>)}
+            {k.icon === 'scissors' && (<><circle cx="15" cy="34" r="5" /><circle cx="27" cy="38" r="5" /><path d="M18.5 30.5 37 8M24 34.5 31 9" /></>)}
+            {k.icon === 'pen' && (<><path d="M30 8l8 8-20 20-10 2 2-10z" /><path d="M26 12l8 8" /><path d="M8 42c8-2 14 2 22-1" stroke="var(--accent)" stroke-dasharray="3 3" /></>)}
+          </svg>
+          <h3>{k.name}</h3>
+          <p>{k.note}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Base>
+
+<script>
+  import { mountHero } from '../lib/hero.ts';
+  import { mountSwatches } from '../lib/swatch.ts';
+  document.fonts.ready.then(() => {
+    mountHero();
+    mountSwatches();
+  });
+</script>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: clamp(24px, 4vw, 64px);
+    padding-top: clamp(8px, 3vw, 40px);
+  }
+  .copy {
+    display: grid;
+    gap: 24px;
+    align-content: center;
+  }
+  h1 {
+    font-size: clamp(2.8rem, 6.4vw, 5.6rem);
+    line-height: 0.98;
+  }
+  h1 em {
+    font-style: italic;
+    font-weight: 450;
+    color: var(--accent);
+    font-variation-settings: 'SOFT' 100, 'opsz' 120;
+  }
+  .lede {
+    font-size: clamp(17px, 1.6vw, 20px);
+    color: var(--ink-2);
+    max-width: 44ch;
+  }
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .art {
+    margin: 0;
+  }
+  .hoopwrap {
+    position: relative;
+    margin: -4% -4% -2%;
+  }
+  .sampler {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    touch-action: manipulation;
+  }
+  .tip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--paper);
+    font: 600 14px/1 var(--sans);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .tip :global(.num) {
+    color: var(--ink-3);
+    margin-right: 4px;
+  }
+  .tip[data-on] {
+    opacity: 1;
+  }
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 16px;
+    font-size: 14px;
+    color: var(--ink-2);
+    text-align: center;
+  }
+  .again {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font: 600 14px/1 var(--sans);
+    cursor: pointer;
+  }
+  .again:hover {
+    background: var(--paper-2);
+  }
+  .read {
+    margin-top: clamp(48px, 8vw, 96px);
+  }
+  .read ul {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .read li {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1.5px dashed var(--line);
+  }
+  .read p {
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  .read strong {
+    color: var(--ink);
+  }
+  .pill {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    min-width: 52px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font: 600 14px/1 var(--sans);
+  }
+  .pill.up {
+    background: #2b2018;
+    color: #fffaf0;
+  }
+  .pill.down {
+    background: #fffaf0;
+    color: #2b2018;
+    border: 1.5px solid #2b2018;
+  }
+  .pill.dash {
+    color: var(--accent);
+  }
+  .pill.dash svg {
+    width: 40px;
+    height: 8px;
+  }
+  .families {
+    display: grid;
+    gap: clamp(56px, 8vw, 96px);
+    margin-top: clamp(64px, 10vw, 128px);
+    scroll-margin-top: 24px;
+  }
+  .family header,
+  .kit header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 24px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .count {
+    margin-left: auto;
+    font: 500 14px/1 var(--sans);
+    color: var(--ink-3);
+  }
+  .family h2,
+  .kit h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+  .family header p,
+  .kit header p {
+    color: var(--ink-2);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .kit {
+    margin-top: clamp(80px, 12vw, 150px);
+    scroll-margin-top: 24px;
+  }
+  .kit ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .kit li {
+    padding: 22px;
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .kit svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .kit h3 {
+    font-size: 21px;
+    margin-bottom: 6px;
+  }
+  .kit p {
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .read ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .grid,
+    .kit ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .grid {
+      gap: 12px;
+    }
+    .kit ul {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

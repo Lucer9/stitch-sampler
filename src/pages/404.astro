@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Dropped stitch" description="This page doesn't exist.">
+  <section class="wrap lost">
+    <p class="eyebrow">404</p>
+    <h1>Dropped stitch.</h1>
+    <p>There's nothing at this address. The stitches are all still here, though.</p>
+    <a class="btn" href="/#stitches">See all 25 stitches</a>
+  </section>
+</Base>
+
+<style>
+  .lost {
+    display: grid;
+    gap: 20px;
+    justify-items: start;
+    padding-top: clamp(40px, 10vw, 120px);
+  }
+  h1 {
+    font-size: clamp(2.8rem, 7vw, 5rem);
+  }
+  p:not(.eyebrow) {
+    color: var(--ink-2);
+    font-size: 19px;
+  }
+</style>
