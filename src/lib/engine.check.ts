@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { compile, frameAt, type Frame, type Motion, type Piece } from './engine.ts';
+import { compile, frameAt, type Frame, type Piece } from './engine.ts';
 import { STITCHES } from './stitches.ts';
 
 /** Whenever the needle's eye is above the cloth, some thread on that side must end in it. */
@@ -35,13 +35,9 @@ for (const s of STITCHES) {
   console.log(`ok ${s.slug.padEnd(24)} ${prog.dur.toFixed(1)}s  ${prog.holes.length} holes`);
 }
 
-for (const motion of ['glide', 'pull', 'turn', 'lift'] as Motion[]) {
-  for (const s of STITCHES) {
-    const d = s.demo();
-    const prog = compile(d.ops, { ...d, motion });
-    for (let t = 0; t <= prog.dur; t += prog.dur / 401) {
-      assert.ok(threaded(frameAt(prog, t)), `${s.slug} (${motion}): thread not in the eye at t=${t.toFixed(2)}`);
-    }
-  }
-  console.log(`ok thread stays in the eye: ${motion}`);
+for (const s of STITCHES) {
+  const d = s.demo();
+  const prog = compile(d.ops, d);
+  for (let t = 0; t <= prog.dur; t += prog.dur / 401) assert.ok(threaded(frameAt(prog, t)), `${s.slug}: thread not in the eye at t=${t.toFixed(2)}`);
 }
+console.log('ok thread stays in the eye');

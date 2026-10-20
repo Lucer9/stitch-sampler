@@ -32,6 +32,8 @@ export interface Needle {
   cut?: 'tip' | 'eye';
   /** Fractions of the needle, measured from the tip, hidden under the fabric. */
   hide?: [number, number];
+  /** Which end hangs lowest while the needle is clear of the cloth: -1 the eye, 1 the tip. Its shadow follows. */
+  lean?: number;
 }
 export interface Hole { p: V; n: number; up: boolean; ev: number }
 export interface Frame { pieces: Piece[]; needle: Needle | null; cap: number; ev: number }
@@ -120,15 +122,7 @@ export interface CompileOpts {
   fast?: number;
   /** Global duration multiplier. */
   pace?: number;
-  /** How the needle comes up and carries the thread to the next hole. */
-  motion?: Motion;
 }
-
-/**
- * `glide`: surfaces partway and slides across. `pull`: slides all the way out so the thread follows it up the hole.
- * `turn`: pulls out, then swings round to enter point first. `lift`: rises off the cloth, hops, and stabs straight down.
- */
-export type Motion = 'glide' | 'pull' | 'turn' | 'lift';
 
 export function compile(ops: Op[], o: CompileOpts): Program {
   const evs: Ev[] = [];
@@ -151,15 +145,23 @@ export function compile(ops: Op[], o: CompileOpts): Program {
     evs.push({ t0: t, t1: t + dur, cap, phases, hole, build, sec });
     t += dur;
   };
-  const M = o.motion ?? 'glide';
-  /** How far past the hole the eye ends up once the needle is out. */
-  const OUT = M === 'glide' ? 0 : NL * 0.5;
-  /** Lift and projection the needle rests at between moves; `lift` keeps it hovering above the cloth. */
-  const R0 = M === 'lift' ? { lift: 2.6, flat: P0 } : { lift: 0, flat: P0 };
+  /**
+   * The needle comes up steeply, is pulled clear so the thread follows it out of the hole, rises off the cloth,
+   * hops to the next hole and stabs down. Between moves it hovers at `R0`, its eye `OUT` past the last hole.
+   */
+  const OUT = NL * 0.5;
+  const R0 = { lift: 2.6, flat: P0 };
+  /** Projection of a needle stabbing straight down. */
+  const STAB = 0.24;
   const rest = (p: V, d: V) => add(p, mul(d, NL * R0.flat + OUT));
+  /** Where the needle was left above the cloth by the last move, so the next one starts from there; null once it dives. */
+  type Pose = { tip: V; d: V; flat: number; lift: number; lean: number };
+  let pose: Pose | null = null;
+  const resume = (a: V, d: V): Pose => pose ?? { tip: rest(a, d), d, flat: R0.flat, lift: R0.lift, lean: -1 };
+  /** A needle nearer the eye looks bigger. */
   const needle = (n: Partial<Needle> & { tip: V; d: V }): Needle => ({
     flat: 0.5, vis: 1, lift: 0, side: 'front', z: NZ, len: NL, w: th.width, ...n,
-    ...(M === 'lift' && n.side !== 'back' ? { w: th.width * (1 + (n.lift ?? 0) * 0.07) } : {}),
+    ...(n.side !== 'back' ? { w: th.width * (1 + (n.lift ?? 0) * 0.07) } : {}),
   });
   /** Direction from `p` to the first later target that is not `p` itself. */
   const aim = (p: V, i: number): V => {
@@ -186,7 +188,7 @@ export function compile(ops: Op[], o: CompileOpts): Program {
         grow(p, w);
         const nd = rot(aim(p, i), TILT);
         const travel = fresh || !a ? 0 : (0.22 + dist(a, p) * 0.016) * tempo;
-        const emerge = (M === 'glide' ? 0.34 : 0.62) * tempo;
+        const emerge = 0.62 * tempo;
         const T = travel + emerge;
         const sp = travel / T;
         if (op.catch && pending) {
@@ -196,6 +198,7 @@ export function compile(ops: Op[], o: CompileOpts): Program {
         }
         const end = fresh ? a : null;
         sec = { z: zi, k: 'up', a, b: p, th: thr, sp };
+        pose = { tip: rest(p, nd), d: nd, flat: R0.flat, lift: R0.lift, lean: -1 };
         push(T, op.cap, { p, n: ++hn, up: true, ev: 0 }, (q, f) => {
           if (end) f.pieces.push({ t: 'tail', c: end, d: v(0.6, 0.8), th: thr, z: -1, side: 'back', end: true });
           if (fresh || !a) {
@@ -209,23 +212,19 @@ export function compile(ops: Op[], o: CompileOpts): Program {
             f.pieces.push({ t: 'line', pts: [a, end], th: thr, z: zi, side: 'back', live: q < sp });
             if (q < sp) f.needle = needle({ tip, d: dB, flat: LB / NL, lift: Math.sin(Math.PI * s) * 1.5, side: 'back' });
           }
-          if (q >= sp && M === 'glide') {
-            const s = out(span(q, sp, 1));
-            f.needle = needle({ tip: add(p, mul(nd, NL * P0 * s)), d: nd, flat: P0, vis: s, cut: 'eye' });
-          } else if (q >= sp) {
+          if (q >= sp) {
             const poke = span(q, sp, sp + (1 - sp) * 0.42);
             const draw = inOut(span(q, sp + (1 - sp) * 0.42, 1));
-            const flat0 = M === 'lift' ? 0.18 : P0;
-            const lift0 = M === 'lift' ? 1.2 : 0;
+            const flat0 = 0.18;
             if (draw <= 0) {
               const s = out(poke);
-              f.needle = needle({ tip: add(p, mul(nd, NL * flat0 * s)), d: nd, flat: flat0, vis: s, cut: 'eye', lift: lift0 * s });
+              f.needle = needle({ tip: add(p, mul(nd, NL * flat0 * s)), d: nd, flat: flat0, vis: s, cut: 'eye' });
             } else {
               const flat = mix(flat0, R0.flat, draw);
-              const lift = mix(lift0, R0.lift, draw);
+              const lift = R0.lift * draw;
               const eye = add(p, mul(nd, OUT * draw));
               if (q < 1) f.pieces.push({ t: 'line', pts: sag(p, eye, 0.3), th: thr, z: zi, side: 'front', live: true, lift: lift * 0.5 });
-              f.needle = needle({ tip: add(eye, mul(nd, NL * flat)), d: nd, flat, lift });
+              f.needle = needle({ tip: add(eye, mul(nd, NL * flat)), d: nd, flat, lift, lean: -1 });
             }
           }
         });
@@ -251,34 +250,35 @@ export function compile(ops: Op[], o: CompileOpts): Program {
         const T = lay + dive;
         const sp = lay / T;
         const nd = rot(aim(a, i - 1), TILT);
-        const tip0 = rest(a, nd);
+        const st = resume(a, nd);
+        pose = null;
         /** A swept needle points along its path, eye trailing, so the thread leaves the eye instead of the tip. */
         const along = (s: number) => rot(norm(sub(at(path, Math.min(1, s + 0.04), acc).p, at(path, Math.max(0, s - 0.04), acc).p)), TILT * 0.45);
-        const dIn = dist(a, p) > 0.5 ? rot(norm(sub(p, a)), TILT * 0.35) : nd;
-        const ndEnd = swept ? along(1) : M === 'turn' ? dIn : nd;
-        const flatIn = M === 'lift' ? 0.24 : P0;
+        const ndEnd = swept ? along(1) : nd;
+        const flatIn = STAB;
         sec = { z: zi, k: 'down', a, b: p, th: thr, sp };
         push(T, op.cap, { p, n: ++hn, up: false, ev: 0 }, (q, f, tt) => {
           if (q < sp) {
             const s = inOut(q / sp);
             const k = Math.min(1, s * 3);
-            const tip = swept ? lerp(tip0, at(path, s, acc).p, k) : lerp(tip0, p, s);
-            const d = swept ? norm(lerp(nd, along(s), k)) : M === 'turn' ? norm(lerp(nd, dIn, s)) : nd;
+            const tip = swept ? lerp(st.tip, at(path, s, acc).p, k) : lerp(st.tip, p, s);
+            const d = swept ? norm(lerp(st.d, along(s), k)) : norm(lerp(st.d, nd, k));
             const hop = Math.sin(Math.PI * s);
-            const proj = M === 'lift' ? mix(R0.flat, flatIn, s) + 0.2 * hop : P0 + 0.24 * hop;
-            const lift = M === 'lift' ? mix(R0.lift, 0.8, s) + 1.6 * hop : 0.4 + hop * 1.6;
+            const proj = mix(st.flat, flatIn, s) + 0.2 * hop;
+            const lift = st.lift * (1 - s) + 1.6 * hop;
+            const lean = mix(st.lean, 1, s);
             const eye = sub(tip, mul(d, NL * proj));
             const sEye = s - (NL * proj) / L;
             const pts = swept && sEye > 0 ? [...slice(path, 0, sEye, acc), eye] : sag(a, eye);
             f.pieces.push({ t: 'line', pts, th: thr, z: zi, side: 'front', live: true, lift: lift * 0.5 });
-            f.needle = needle({ tip, d, flat: proj, lift });
+            f.needle = needle({ tip, d, flat: proj, lift, lean });
           } else {
             const s = inOut(span(q, sp, 1));
             const eye = sub(p, mul(ndEnd, NL * flatIn * (1 - s)));
             const laid = loop ? loopShape(loop, s, tt) : op.via ? path : null;
             const pts = laid ? (q < 1 ? toEye(laid, eye, NL * flatIn * (1 - s)) : laid) : q >= 1 ? path : sag(a, eye, 1 - s);
             f.pieces.push({ t: 'line', pts, th: thr, z: zi, side: 'front', live: q < 1 && !loop });
-            if (q < 1) f.needle = needle({ tip: p, d: ndEnd, flat: flatIn, vis: 1 - s, cut: 'tip', lift: M === 'lift' ? 0.8 * (1 - s) : 0 });
+            if (q < 1) f.needle = needle({ tip: p, d: ndEnd, flat: flatIn, vis: 1 - s, cut: 'tip' });
           }
         });
         cur = p;
@@ -293,8 +293,8 @@ export function compile(ops: Op[], o: CompileOpts): Program {
         const far = dist(a, b) > w * 1.6;
         const nd = far ? norm(sub(b, a)) : rot(v(1, 0), -0.5);
         const T0 = add(a, mul(nd, w * 2.4));
-        const nd0 = rot(aim(a, i - 1), TILT);
-        const tipStart = rest(a, nd0);
+        const st = resume(a, rot(aim(a, i - 1), TILT));
+        pose = null;
         const r = w * (0.95 + 0.12 * n) * (fig8 ? 1.15 : 1);
         grow(b, r * 2);
         const T = (1.9 + n * 0.5) * tempo;
@@ -304,9 +304,9 @@ export function compile(ops: Op[], o: CompileOpts): Program {
           const s2 = span(q, 0.14, 0.58);
           const s3 = span(q, 0.58, 0.8);
           const s4 = span(q, 0.8, 1);
-          let tip = lerp(tipStart, T0, inOut(s1));
-          let flat = P0 + (0.9 - P0) * inOut(s1);
-          const dir = s1 < 1 ? norm(lerp(nd0, nd, inOut(s1))) : nd;
+          let tip = lerp(st.tip, T0, inOut(s1));
+          let flat = mix(st.flat, 0.9, inOut(s1));
+          const dir = s1 < 1 ? norm(lerp(st.d, nd, inOut(s1))) : nd;
           if (s3 > 0) { tip = lerp(T0, b, inOut(s3)); flat = 0.9 - 0.6 * inOut(s3); }
           const proj = flat;
           const eye = sub(tip, mul(dir, NL * proj));
@@ -325,7 +325,8 @@ export function compile(ops: Op[], o: CompileOpts): Program {
             const last = coils.length ? sub(coils[coils.length - 1], side) : eye;
             f.pieces.push({ t: 'line', pts: sag(a, first), th: thr, z: zi, side: 'front', live: true });
             if (coils.length) f.pieces.push({ t: 'line', pts: [last, eye], th: thr, z: NZ - 2, side: 'front', live: true });
-            f.needle = needle({ tip, d: dir, flat, lift: 1.4 * flat });
+            const low = 1.4 * flat * (1 - inOut(s3));
+            f.needle = needle({ tip, d: dir, flat, lift: s1 < 1 ? mix(st.lift, low, inOut(s1)) : low, lean: s1 < 1 ? mix(st.lean, 0, inOut(s1)) : inOut(s3) });
           } else {
             if (far) f.pieces.push({ t: 'line', pts: [a, b], th: thr, z: zi, side: 'front' });
             f.pieces.push({ t: 'knot', c: b, r, th: thr, z: zi + 0.5, side: 'front', style: fig8 ? 'colonial' : 'french', form: inOut(s4), spin: i * 1.7 });
@@ -352,13 +353,27 @@ export function compile(ops: Op[], o: CompileOpts): Program {
         grow(b, w * 2); grow(tipF, w);
         const T = (2.6 + n * 0.22) * tempo;
         sec = { z: zi, k: 'bullion', a, b, th: thr, wraps: n };
+        const st = resume(a, rot(aim(a, i - 1), TILT));
+        pose = null;
         push(T, op.cap, { p: b, n: ++hn, up: false, ev: 0 }, (q, f) => {
-          const s1 = span(q, 0, 0.16);
+          const s1 = span(q, 0.1, 0.16);
           const s2 = span(q, 0.16, 0.6);
           const s3 = span(q, 0.6, 0.8);
           const s4 = span(q, 0.8, 1);
           const coilEnd = add(a, mul(u, Lab));
-          if (s3 <= 0) {
+          if (q < 0.06) {
+            const e = inOut(span(q, 0, 0.06));
+            const tip = lerp(st.tip, b, e);
+            const d = norm(lerp(st.d, u, e));
+            const flat = mix(st.flat, 1, e);
+            const ln = mix(NL, len, e);
+            f.needle = needle({ tip, d, flat, len: ln, lift: mix(st.lift, 0.3, e), lean: mix(st.lean, 0, e) });
+            f.pieces.push({ t: 'line', pts: sag(a, sub(tip, mul(d, ln * flat))), th: thr, z: zi, side: 'front', live: true });
+          } else if (q < 0.1) {
+            const tip = lerp(b, a, inOut(span(q, 0.06, 0.1)));
+            f.needle = needle({ tip, d: u, flat: 1, lift: 0.3, len, hide: [0, dist(tip, b) / len] });
+            f.pieces.push({ t: 'line', pts: [a, sub(tip, mul(u, len))], th: thr, z: zi, side: 'front', live: true });
+          } else if (s3 <= 0) {
             const tip = lerp(a, tipF, out(s1));
             const ta = dist(tip, a) / len;
             f.needle = needle({ tip, d: u, flat: 1, lift: 0.3, len, hide: [ta, ta + Lab / len], vis: 1 });
@@ -407,7 +422,8 @@ export function compile(ops: Op[], o: CompileOpts): Program {
         const p2 = sub(P, mul(n, w * 1.1));
         grow(P, w * 2);
         const T = 1.5 * tempo;
-        const nd0 = rot(aim(s0, i - 1), TILT);
+        const st = resume(s0, rot(aim(s0, i - 1), TILT));
+        pose = { tip: add(p2, mul(n, -(w * 1.5 + NL))), d: mul(n, -1), flat: 1, lift: 0.4, lean: 0 };
         sec = { z: zi, k: 'coral', a: s0, b: P, th: thr };
         push(T, op.cap, { p: P, n: ++hn, up: false, ev: 0 }, (q, f) => {
           const s1 = span(q, 0, 0.3);
@@ -415,11 +431,11 @@ export function compile(ops: Op[], o: CompileOpts): Program {
           const s3 = span(q, 0.6, 1);
           const nd = mul(n, -1);
           if (s3 <= 0) {
-            const tip = s2 > 0 ? add(p2, mul(nd, w * 1.5 * out(s2))) : lerp(rest(s0, nd0), p2, inOut(s1));
-            const dn = s2 > 0 ? nd : norm(lerp(nd0, nd, inOut(s1)));
-            const flat = s2 > 0 ? 1 : mix(R0.flat, 1, inOut(s1));
+            const tip = s2 > 0 ? add(p2, mul(nd, w * 1.5 * out(s2))) : lerp(st.tip, p2, inOut(s1));
+            const dn = s2 > 0 ? nd : norm(lerp(st.d, nd, inOut(s1)));
+            const flat = s2 > 0 ? 1 : mix(st.flat, 1, inOut(s1));
             const ta = dist(tip, p2) / NL;
-            f.needle = needle({ tip, d: dn, flat, lift: 0.2, hide: s2 > 0 ? [ta, ta + (w * 2.2) / NL] : undefined });
+            f.needle = needle({ tip, d: dn, flat, lift: s2 > 0 ? 0.2 : mix(st.lift, 0.2, inOut(s1)), lean: s2 > 0 ? 0 : mix(st.lean, 0, inOut(s1)), hide: s2 > 0 ? [ta, ta + (w * 2.2) / NL] : undefined });
             const eye = sub(tip, mul(dn, NL * flat));
             const loopTip = add(P, mul(d, w * 2.6 * out(s1)));
             const around = add(tip, mul(d, w * 1.2));
@@ -449,12 +465,21 @@ export function compile(ops: Op[], o: CompileOpts): Program {
         const dd = norm(v(-1, 1));
         const from = sub(X, mul(dd, w * 2));
         const to = add(X, mul(dd, w * 2));
-        const T = 1.6 * tempo;
+        const T = 1.9 * tempo;
+        const st = resume(L0, rot(aim(L0, i - 1), TILT));
+        pose = { tip: add(to, mul(dd, NL)), d: dd, flat: 0.95, lift: 0.5, lean: 0 };
         sec = { z: zi, k: 'tie', a: L0, b: X, th: thr };
         push(T, op.cap, undefined, (q, f) => {
-          const s1 = span(q, 0, 0.55);
-          const s2 = span(q, 0.55, 1);
-          if (s2 <= 0) {
+          const s0 = inOut(span(q, 0, 0.2));
+          const s1 = span(q, 0.2, 0.6);
+          const s2 = span(q, 0.6, 1);
+          if (s1 <= 0) {
+            const tip = lerp(st.tip, from, s0);
+            const d = norm(lerp(st.d, dd, s0));
+            const flat = mix(st.flat, 0.95, s0);
+            f.needle = needle({ tip, d, flat, lift: mix(st.lift, 0.3, s0), lean: mix(st.lean, 0, s0) });
+            f.pieces.push({ t: 'line', pts: sag(L0, sub(tip, mul(d, NL * flat))), th: thr, z: zi, side: 'front', live: true });
+          } else if (s2 <= 0) {
             const tip = lerp(from, to, inOut(s1));
             f.needle = needle({ tip, d: dd, flat: 0.95, lift: 0.3, z: ref - 0.4 });
             const eye = sub(tip, mul(dd, NL * 0.95));
@@ -469,7 +494,7 @@ export function compile(ops: Op[], o: CompileOpts): Program {
               f.pieces.push({ t: 'line', pts: sag(X, sub(tip, mul(dd, NL * 0.95)), 0.4), th: thr, z: ref + 0.6, side: 'front', live: true });
             }
           }
-        }, [0, 0.55]);
+        }, [0, 0.6]);
         cur = X;
         break;
       }
@@ -483,15 +508,18 @@ export function compile(ops: Op[], o: CompileOpts): Program {
         const unders = op.unders ?? [];
         const T = (0.35 + L * 0.03) * tempo;
         sec = { z: zi, k: 'surface', a, b: path[path.length - 1], th: thr };
-        const nd0 = rot(aim(a, i - 1), TILT);
+        const st = resume(a, rot(aim(a, i - 1), TILT));
+        const last = at(path, 1, acc);
+        pose = { tip: last.p, d: last.d, flat: 0.95, lift: 0.4, lean: 0 };
         push(T, op.cap, undefined, (q, f) => {
           const s = inOut(q);
           const k0 = Math.min(1, s * 3);
           const on = at(path, s, acc);
-          const tip = lerp(rest(a, nd0), on.p, k0);
-          const dn = norm(lerp(nd0, on.d, k0));
-          const eye = sub(tip, mul(dn, NL * 0.95));
-          const sE = q < 1 ? Math.max(0, s - (NL * 0.95) / L) : 1;
+          const tip = lerp(st.tip, on.p, k0);
+          const dn = norm(lerp(st.d, on.d, k0));
+          const flat = mix(st.flat, 0.95, k0);
+          const eye = sub(tip, mul(dn, NL * flat));
+          const sE = q < 1 ? Math.max(0, s - (NL * flat) / L) : 1;
           const cuts = [0, ...unders.flatMap((u) => [u.a, u.b]), 1].filter((c, k, arr) => k === 0 || c > arr[k - 1]);
           for (let k = 0; k < cuts.length - 1; k++) {
             const c0 = cuts[k];
@@ -502,7 +530,7 @@ export function compile(ops: Op[], o: CompileOpts): Program {
           }
           if (q < 1) {
             const u = unders.find((x) => x.a <= s && x.b >= s);
-            f.needle = needle({ tip, d: dn, flat: 0.95, lift: 0.4, z: u ? u.ref - 0.4 : NZ });
+            f.needle = needle({ tip, d: dn, flat, lift: mix(st.lift, 0.4, k0), lean: mix(st.lean, 0, k0), z: u ? u.ref - 0.4 : NZ });
             f.pieces.push({ t: 'line', pts: [sE > 0 ? at(path, sE, acc).p : a, eye], th: thr, z: u ? u.ref - 0.45 : zi, side: 'front', bare: true, live: true });
           }
         });

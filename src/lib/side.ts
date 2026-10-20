@@ -218,8 +218,8 @@ export class SideView {
         break;
       }
       case 'tie': {
-        const s1 = span(q, 0, 0.55);
-        const s2 = span(q, 0.55, 1);
+        const s1 = span(q, 0.2, 0.6);
+        const s2 = span(q, 0.6, 1);
         if (s2 <= 0) {
           const tip = v(lerp(-w * 2.4, w * 2.4, inOut(s1)), w * 0.55);
           items.push({ k: 'line', pts: [v(xa, 0), ...quad(v(xa - w, w * 1.6), v(tip.x + w * 1.4, -w * 0.1), v(tip.x + w * 0.6, w * 0.15), 8)] });

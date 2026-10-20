@@ -730,17 +730,29 @@ export function needle(g: CanvasRenderingContext2D, n: Needle, s: number, L: V, 
   }
   if (!sharp) hole(g, tip, hw * 2.4);
   if (!eyed) hole(g, end, hw * 2.4);
-  g.shadowColor = 'rgba(30,20,10,0.42)';
-  g.shadowBlur = s * (0.6 + n.lift * 0.6);
-  g.shadowOffsetX = s * (0.3 + n.lift * 0.7);
-  g.shadowOffsetY = s * (0.5 + n.lift * 1.0);
+  /**
+   * The shadow falls away from the light by each end's height above the cloth, so an end touching the cloth (a tip
+   * going in, an eye coming out) meets its own shadow, and a raised end throws it further and softer.
+   */
+  const rise = Math.min(n.len, (len * Math.sqrt(Math.max(0, 1 - n.flat ** 2))) / Math.max(n.flat, 0.15));
+  const lean = n.lean ?? 0;
+  const [hT, hE] = n.cut === 'tip' ? [0, rise] : n.cut === 'eye' ? [rise, 0] : [n.lift + (rise * (1 - lean)) / 2, n.lift + (rise * (1 + lean)) / 2];
+  const away = mul(L, -1);
+  const fall = (h: number) => mul(away, 0.3 + 0.1 * h);
+  g.save();
+  g.filter = `blur(${(s * (0.22 + 0.018 * (hT + hE))).toFixed(1)}px)`;
+  g.strokeStyle = `rgba(30,20,10,${(0.45 / (1 + 0.01 * (hT + hE))).toFixed(3)})`;
+  g.lineWidth = hw * 2;
+  g.lineCap = 'round';
+  trace(g, [add(tip, fall(hT)), add(end, fall(hE))]);
+  g.stroke();
+  g.restore();
   const mid = lerp(tip, end, 0.5);
   const lg = g.createLinearGradient(mid.x - nn.x * hw, mid.y - nn.y * hw, mid.x + nn.x * hw, mid.y + nn.y * hw);
   const stops = ['#3c4148', '#8c939c', '#f4f7fa', '#c3c9d0', '#555b63'];
   (dot(nn, L) > 0 ? stops.slice().reverse() : stops).forEach((c, i) => lg.addColorStop(i / 4, c));
   g.fillStyle = lg;
   g.fill(shape);
-  g.shadowColor = 'transparent';
   g.strokeStyle = 'rgba(30,32,36,0.65)';
   g.lineWidth = hw * 0.22;
   g.lineJoin = 'round';
