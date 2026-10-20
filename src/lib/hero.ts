@@ -110,9 +110,11 @@ function compose(): Motif[] {
     return d > 9.5 && p.y < 2;
   }));
 
-  add_('couching', T('#c79a35', 2), (o) =>
-    couch(o, curve([v(-6, 39), v(-2.4, 33.5), v(0, 29.5), v(-5, 25.5), v(-8.6, 28.2), v(-5.4, 31.8), v(0, 29.5), v(5.4, 25.5), v(8.6, 28.2), v(5.4, 31.8), v(0, 29.5), v(2.4, 33.5), v(6, 39)]), T('#c79a35', 2), T('#a8382b', 0.8), 4.2),
-  );
+  add_('couching', T('#c79a35', 2), (o) => {
+    const c = v(0, 33.6);
+    const spiral = Array.from({ length: 49 }, (_, k) => add(c, polar(1.8 + 4.6 * (k / 48), deg(-90 + 450 * (k / 48)))));
+    couch(o, spiral, T('#c79a35', 2), T('#a8382b', 0.7), 3.4);
+  });
   add_('running-stitch', T('#a8382b', W), (o) => running(o, curve(arc(44.6, -146, -34, 30)), 2.5, 1.6));
   add_('blanket-stitch', T('#2c4777', W), (o) => blanket(o, curve(arc(44.6, 146, 34, 30)), 2.6, 2.2, -1));
   add_('chain-stitch', T('#2f6d70', W), (o) => chain(o, curve([onRing(41, -30), onRing(41.6, -17), onRing(40.8, -4), v(36.8, -1.8), v(35, -5.6), v(37.4, -7.6)]), 2.6, 0.32));
@@ -145,6 +147,10 @@ class Hero {
   private raf = 0;
   private last = 0;
   private hover: Motif | null = null;
+  /** Motifs in the spotlight; kept after the pointer leaves so the dim can fade out. */
+  private lit: Motif[] = [];
+  private fade = 0;
+  private spot: HTMLCanvasElement | null = null;
   private tip: HTMLElement;
   private reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   private numbers = new Map(STITCHES.map((s, i) => [s.slug, { n: i + 1, name: s.name }]));
@@ -153,9 +159,11 @@ class Hero {
     this.scene = new Scene(el, { mode: 'hoop', R: 50, pitch: 1.05 });
     this.tip = el.parentElement!.querySelector<HTMLElement>('.tip')!;
     this.motifs = compose().sort((a, b) => ORDER.indexOf(a.slug) - ORDER.indexOf(b.slug));
-    const tracks = [0, 0.35, 0.7, 1.05];
+    const tracks = Array.from({ length: 8 }, (_, k) => k * 0.12);
+    const MAX = 4;
     for (const mo of this.motifs) {
-      mo.prog = compile(mo.ops, { th: mo.th, needle: W * 7, slow: 0, fast: 0.3 });
+      mo.prog = compile(mo.ops, { th: mo.th, slow: 0, fast: 0.1 });
+      if (mo.prog.dur > MAX) mo.prog = compile(mo.ops, { th: mo.th, slow: 0, fast: (0.1 * MAX) / mo.prog.dur });
       const k = tracks.indexOf(Math.min(...tracks));
       mo.t0 = tracks[k];
       tracks[k] += mo.prog.dur * 0.85;
@@ -195,10 +203,13 @@ class Hero {
   }
 
   private loop = (now: number) => {
-    this.t += Math.min(0.05, (now - this.last) / 1000);
+    const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
+    if (this.t <= this.dur + 0.1) this.t += dt;
+    const goal = this.hover ? 1 : 0;
+    this.fade = this.reduce ? goal : goal > this.fade ? Math.min(goal, this.fade + dt / 0.16) : Math.max(goal, this.fade - dt / 0.24);
     this.draw();
-    this.raf = this.t <= this.dur + 0.1 ? requestAnimationFrame(this.loop) : 0;
+    this.raf = this.t <= this.dur + 0.1 || this.fade !== goal ? requestAnimationFrame(this.loop) : 0;
   };
 
   private draw() {
@@ -215,31 +226,32 @@ class Hero {
       }
       live.push(frameAt(mo.prog!, lt));
     }
-    const h = this.hover;
     this.scene.draw(live, {
       side: 'front',
       base: this.baked ?? undefined,
-      after: h ? (g) => this.ring(g, h) : undefined,
+      after: this.fade > 0 ? (g) => this.spotlight(g) : undefined,
     });
   }
 
-  private ring(g: CanvasRenderingContext2D, mo: Motif) {
-    const pts = mo.pts!.map((p) => this.scene.screen(p, 'front'));
-    const xs = pts.map((p) => p.x);
-    const ys = pts.map((p) => p.y);
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const rx = (Math.max(...xs) - Math.min(...xs)) / 2 + this.scene.s * 2.4;
-    const ry = (Math.max(...ys) - Math.min(...ys)) / 2 + this.scene.s * 2.4;
+  /** Veils the cloth in linen, then repaints the lit motifs on top so everything else recedes. */
+  private spotlight(g: CanvasRenderingContext2D) {
+    const { W, H, cx, cy, s } = this.scene;
+    const spot = (this.spot ??= document.createElement('canvas'));
+    if (spot.width !== W || spot.height !== H) {
+      spot.width = W;
+      spot.height = H;
+    }
+    spot.getContext('2d')!.clearRect(0, 0, W, H);
+    const frames = this.lit.filter((mo) => this.t >= mo.t0!).map((mo) => frameAt(mo.prog!, Math.min(this.t - mo.t0!, mo.prog!.dur + 1)));
+    this.scene.bake(frames, spot);
     g.save();
-    g.setLineDash([this.scene.s * 1.1, this.scene.s * 0.9]);
-    g.lineWidth = this.scene.s * 0.42;
-    g.strokeStyle = 'rgba(255,252,245,0.95)';
-    g.shadowColor = 'rgba(60,35,10,0.35)';
-    g.shadowBlur = this.scene.s;
+    g.globalAlpha = this.fade * 0.7;
+    g.fillStyle = '#efe4ca';
     g.beginPath();
-    g.ellipse(cx, cy, Math.min(rx, this.scene.s * 30), Math.min(ry, this.scene.s * 30), 0, 0, Math.PI * 2);
-    g.stroke();
+    g.arc(cx, cy, this.scene.o.R * 1.02 * s, 0, Math.PI * 2);
+    g.fill();
+    g.globalAlpha = this.fade;
+    g.drawImage(spot, 0, 0);
     g.restore();
   }
 
@@ -262,6 +274,7 @@ class Hero {
   private setHover(mo: Motif | null, x = 0, y = 0) {
     const changed = mo !== this.hover;
     this.hover = mo;
+    if (mo) this.lit = this.motifs.filter((m) => m.slug === mo.slug);
     this.scene.el.style.cursor = mo ? 'pointer' : '';
     if (mo) {
       const info = this.numbers.get(mo.slug)!;
@@ -269,6 +282,6 @@ class Hero {
       this.tip.style.transform = `translate(${x + 16}px, ${y + 14}px)`;
     }
     this.tip.toggleAttribute('data-on', !!mo);
-    if (changed && !this.raf) this.draw();
+    if (changed) this.start();
   }
 }
