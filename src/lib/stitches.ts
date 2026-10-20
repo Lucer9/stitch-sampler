@@ -749,10 +749,13 @@ export const STITCHES: Stitch[] = [
     slug: 'woven-wheel', R: 27, name: 'Woven wheel', family: 'Fills', level: 2, aka: 'Spider web rose',
     use: 'Plump, raised roses.',
     steps: [
-      'Make five straight stitches from the edge of a circle into the centre. It must be an odd number.',
-      'Come up near the centre, between two spokes.',
-      'Weave over and under the spokes, round and round, without piercing the fabric.',
-      'Keep weaving until the spokes are covered, then slip under the edge and go down.',
+      'Draw a circle and mark five points round it, evenly spaced like a star. Come up at the first point and go down in the centre.',
+      'Make the other four spokes the same way, edge to centre. Five is the magic number: it must be odd.',
+      'Come up close to the centre, between two spokes. From now on the needle stays on top and never goes through the fabric.',
+      'First round: slide under a spoke, over the next, under the next, all the way round.',
+      'Second round: because there are five spokes, you now go over the spokes you went under. That swap is what makes it look woven.',
+      'Keep spiralling out. Leave the thread loose and nudge each round in towards the middle so the rose stays plump.',
+      'When the spokes are hidden, slip under the last round and go down at the edge.',
     ],
     tip: 'Weave with a blunt tapestry needle and keep the tension loose so the rose stays plump.',
     watch: 'An even number of spokes breaks the over-under pattern: every round lands on the same spokes.',
@@ -760,7 +763,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       wheel(o, v(0, 0), 18, 2.2);
-      return { ops: caps(o, { 0: 0, 10: 1, 11: 2, [o.length - 1]: 3 }), th: T(C.rose), slow: 12, fast: 0.6 };
+      return { ops: caps(o, { 0: 0, 2: 1, 10: 2, 11: 3, 12: 4, 14: 5, [o.length - 1]: 6 }), th: T(C.rose), fast: 0.6 };
     },
   },
   {
