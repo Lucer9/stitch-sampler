@@ -71,7 +71,8 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
       <h2 id="good-h">What it’s good for</h2>
       <ul>
         {s.good.map(([title, text], k) => (
-          <li>
+          <li data-swatch-host>
+            <span class="ex"><canvas data-swatch="" data-example={`${s.slug}/${k}`} aria-hidden="true"></canvas></span>
             <span class="gn num">{String(k + 1).padStart(2, '0')}</span>
             <h3>{title}</h3>
             <p>{text}</p>
@@ -118,6 +119,18 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
   }
   .note.warn h3 {
     color: var(--accent);
+  }
+  .ex {
+    display: block;
+    margin: -8px -8px 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #e3d6bc;
+  }
+  .ex canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
   }
   .try {
     margin-top: 20px;

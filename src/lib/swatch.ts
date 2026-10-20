@@ -2,8 +2,9 @@ import { compile, frameAt } from './engine.ts';
 import { Scene } from './render.ts';
 import { bySlug } from './stitches.ts';
 import { lesson, projectBySlug } from './projects.ts';
+import { example } from './examples.ts';
 
-/** Renders every `canvas[data-swatch]` (a stitch, or with `data-project` a project) once it nears the viewport; hovering its link replays it. `data-zoom` crops in on the middle. */
+/** Renders every `canvas[data-swatch]` (a stitch; with `data-project` a project; with `data-example="slug/k"` a use of it) once it nears the viewport; hovering its link replays it. */
 export function mountSwatches() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const io = new IntersectionObserver(
@@ -20,11 +21,15 @@ export function mountSwatches() {
 }
 
 function swatch(el: HTMLCanvasElement, reduce: boolean) {
-  const d = el.dataset.project ? lesson(projectBySlug(el.dataset.project)).demo() : bySlug(el.dataset.swatch!).demo();
+  const [slug, k] = (el.dataset.example ?? '').split('/');
+  const d = el.dataset.project ? lesson(projectBySlug(el.dataset.project)).demo() : k ? example(slug, +k) : bySlug(el.dataset.swatch!).demo();
   const prog = compile(d.ops, d);
   const b = prog.box;
-  const size = (Math.max(b.x1 - b.x0, b.y1 - b.y0) * 1.22 + 6) / +(el.dataset.zoom ?? 1);
-  const scene = new Scene(el, { mode: 'swatch', view: { x: (b.x0 + b.x1) / 2 - size / 2, y: (b.y0 + b.y1) / 2 - size / 2, w: size, h: size }, pitch: 1.05 });
+  const size = Math.max(b.x1 - b.x0, b.y1 - b.y0) * 1.22 + 6;
+  const ar = el.clientWidth / Math.max(1, el.clientHeight) || 1;
+  const vw = size * Math.max(1, ar);
+  const vh = size * Math.max(1, 1 / ar);
+  const scene = new Scene(el, { mode: 'swatch', view: { x: (b.x0 + b.x1) / 2 - vw / 2, y: (b.y0 + b.y1) / 2 - vh / 2, w: vw, h: vh }, pitch: 1.05 });
   const end = prog.dur + 1;
   const draw = (t: number) => {
     const f = frameAt(prog, t);
@@ -32,7 +37,7 @@ function swatch(el: HTMLCanvasElement, reduce: boolean) {
   };
   draw(end);
   el.dataset.ready = '';
-  if (reduce || el.dataset.still !== undefined) return;
+  if (reduce) return;
   const host = el.closest<HTMLElement>('a, [data-swatch-host]') ?? el;
   let raf = 0;
   let t0 = 0;
