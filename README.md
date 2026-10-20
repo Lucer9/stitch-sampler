@@ -64,7 +64,7 @@ radius `R`. Captions are tied to ops with `cap` (a number, or an array that step
 
 ## Deploy
 
-Not deployed yet. `wrangler.jsonc` is ready: `npm run build && npx wrangler deploy`, after
-`npx wrangler secret put ANTHROPIC_API_KEY` for the design helper. `astro.config.mjs` points `site` at
-`https://stitch-sampler.carlosaguirre.workers.dev`, which the OG tags use. The design route allows 5 requests a minute
+Live at https://stitch-sampler.carlosaguirre.workers.dev (Worker `stitch-sampler`, deployed by hand; no CI). Redeploy
+with `npm run build && npx wrangler deploy`. The design helper's key is the Worker secret `ANTHROPIC_API_KEY`
+(`npx wrangler secret put ANTHROPIC_API_KEY`). `astro.config.mjs` points `site` at the live URL, which the OG tags use. The design route allows 5 requests a minute
 per visitor (`DESIGN_LIMITER`).
