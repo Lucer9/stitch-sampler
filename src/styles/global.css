@@ -245,7 +245,7 @@ a {
   gap: 16px;
   margin-bottom: 28px;
 }
-.lesson .crumbs a {
+.lesson .crumbs .all {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -254,52 +254,16 @@ a {
   color: var(--ink-2);
   text-decoration: none;
 }
-.lesson .crumbs a:hover {
+.lesson .crumbs .all:hover {
   color: var(--ink);
 }
-.lesson .crumbs svg {
+.lesson .crumbs .all svg {
   flex: none;
   width: 20px;
   height: 20px;
 }
-.lesson .pager {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-.lesson .go {
-  padding: 0 14px;
-  border: 1.5px solid var(--line);
-  border-radius: 999px;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-.lesson a.go:hover {
-  border-color: var(--ink-3);
-  background: var(--card);
-}
-.lesson .go.off {
-  display: inline-grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  color: var(--ink-3);
-  opacity: 0.45;
-}
-.lesson a.go:first-child {
-  padding-left: 8px;
-}
-.lesson a.go:last-child {
-  padding-right: 8px;
-}
-.lesson .name {
-  max-width: 16ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .lesson .where {
+  margin-left: auto;
   padding: 0 10px;
   white-space: nowrap;
 }
@@ -339,7 +303,7 @@ a {
   font-size: clamp(1.8rem, 3.4vw, 2.6rem);
   margin-bottom: 24px;
 }
-.lesson .good ul {
+.lesson .good > ul {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -347,7 +311,7 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
 }
-.lesson .good li {
+.lesson .good > ul > li {
   padding: 22px;
   border-radius: 18px;
   background: var(--card);
@@ -369,6 +333,10 @@ a {
 }
 
 @media (max-width: 900px) {
+  .lesson .where {
+    order: 3;
+    margin-left: 0;
+  }
   .lesson .body {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
@@ -377,17 +345,10 @@ a {
   .lesson .guide {
     margin-top: 40px;
   }
-  .lesson .name {
-    display: none;
-  }
-  .lesson a.go:first-child,
-  .lesson a.go:last-child {
-    padding: 0 12px;
-  }
 }
 
 @media (max-width: 560px) {
-  .lesson .good ul {
+  .lesson .good > ul {
     grid-template-columns: minmax(0, 1fr);
   }
   .lesson .crumbs .all {

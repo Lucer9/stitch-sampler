@@ -71,6 +71,7 @@ const { name, steps, knot = false, practice = true, vt } = Astro.props;
       <figcaption>A cut through the fabric. Watch the wraps slide down the needle and settle on top.</figcaption>
     </figure>
   )}
+  <slot />
 </section>
 
 <style>
@@ -78,7 +79,7 @@ const { name, steps, knot = false, practice = true, vt } = Astro.props;
     grid-area: stage;
     align-self: start;
     position: sticky;
-    top: 12px;
+    top: 40px;
     display: flex;
     flex-direction: column;
     gap: 16px;

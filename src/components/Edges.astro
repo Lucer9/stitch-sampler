@@ -1,0 +1,118 @@
+---
+interface Props {
+  prev?: { href: string; name: string };
+  next?: { href: string; name: string };
+  /** What is being paged through, for the labels. */
+  kind: string;
+}
+const { prev, next, kind } = Astro.props;
+---
+<nav class="edges" aria-label={`Previous and next ${kind}`}>
+  {prev && (
+    <a class="edge prev" href={prev.href} rel="prev" aria-label={`Previous ${kind}: ${prev.name}`}>
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="lab"><span class="k">Previous {kind}</span>{prev.name}</span>
+    </a>
+  )}
+  {next && (
+    <a class="edge next" href={next.href} rel="next" aria-label={`Next ${kind}: ${next.name}`}>
+      <span class="lab"><span class="k">Next {kind}</span>{next.name}</span>
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  )}
+</nav>
+
+<style>
+  .edge {
+    position: fixed;
+    top: 50%;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 64px;
+    padding: 0 12px;
+    translate: 0 -50%;
+    background: var(--card);
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: 0 10px 30px -12px rgba(50, 30, 10, 0.45), 0 1px 3px rgba(50, 30, 10, 0.12);
+    transition: padding 0.22s ease, background-color 0.15s ease;
+  }
+  .prev {
+    left: 0;
+    border-radius: 0 18px 18px 0;
+  }
+  .next {
+    right: 0;
+    border-radius: 18px 0 0 18px;
+  }
+  .edge svg {
+    flex: none;
+    width: 22px;
+    height: 22px;
+  }
+  .lab {
+    display: grid;
+    max-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    white-space: nowrap;
+    font: 600 15px/1.3 var(--sans);
+    transition: max-width 0.25s ease, opacity 0.2s ease;
+  }
+  .next .lab {
+    text-align: right;
+  }
+  .k {
+    font: 600 11px/1.3 var(--sans);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .edge:hover,
+  .edge:focus-visible {
+    padding: 0 16px;
+  }
+  .edge:hover .lab,
+  .edge:focus-visible .lab {
+    max-width: 240px;
+    opacity: 1;
+  }
+  @media (max-width: 900px) {
+    .edges {
+      display: contents;
+    }
+    .edge {
+      position: static;
+      order: 4;
+      justify-content: center;
+      width: 44px;
+      min-height: 44px;
+      padding: 0;
+      translate: none;
+      border: 1.5px solid var(--line);
+      border-radius: 50%;
+      background: transparent;
+      box-shadow: none;
+    }
+    .prev {
+      order: 2;
+      margin-left: auto;
+    }
+    .lab {
+      display: none;
+    }
+    .edge:hover,
+    .edge:focus-visible {
+      padding: 0;
+      border-color: var(--ink-3);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .edge,
+    .lab {
+      transition: none;
+    }
+  }
+</style>

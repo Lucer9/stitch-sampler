@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Level from '../../components/Level.astro';
 import Player from '../../components/Player.astro';
+import Edges from '../../components/Edges.astro';
 import Steps from '../../components/Steps.astro';
 import { PROJECTS, floss, type Project } from '../../lib/projects.ts';
 import { bySlug } from '../../lib/stitches.ts';
@@ -29,21 +30,12 @@ const items = p.parts.map((part) => ({ text: part.step, tag: bySlug(part.stitch)
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         All projects
       </a>
-      <div class="pager">
-        {prev ? (
-          <a class="go" href={`/projects/${prev.slug}/`} rel="prev" aria-label={`Previous project: ${prev.name}`}>
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="name">{prev.name}</span>
-          </a>
-        ) : <span class="go off" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>}
-        <span class="where eyebrow">Project · <span class="num">{String(i + 1).padStart(2, '0')}</span> of {PROJECTS.length}</span>
-        {next ? (
-          <a class="go" href={`/projects/${next.slug}/`} rel="next" aria-label={`Next project: ${next.name}`}>
-            <span class="name">{next.name}</span>
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
-        ) : <span class="go off" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>}
-      </div>
+      <span class="where eyebrow">Project · <span class="num">{String(i + 1).padStart(2, '0')}</span> of {PROJECTS.length}</span>
+      <Edges
+        kind="project"
+        prev={prev && { href: `/projects/${prev.slug}/`, name: prev.name }}
+        next={next && { href: `/projects/${next.slug}/`, name: next.name }}
+      />
     </nav>
 
     <div class="body">
@@ -56,12 +48,13 @@ const items = p.parts.map((part) => ({ text: part.step, tag: bySlug(part.stitch)
         <p class="use">{p.blurb}</p>
       </header>
 
-      <Player name={p.name} steps={steps} practice={false} vt={`project-${p.slug}`} />
+      <Player name={p.name} steps={steps} practice={false} vt={`project-${p.slug}`}>
+        <p class="pen">The blue lines are the pattern, drawn on in water-soluble pen. A damp cloth lifts them when you finish.</p>
+      </Player>
 
       <aside class="guide">
         <h2 class="eyebrow">Step by step</h2>
         <Steps items={items} />
-        <p class="pen">The blue lines are the pattern, drawn on in water-soluble pen. A damp cloth lifts them when you finish.</p>
         <p class="keys"><kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> step · <kbd>F</kbd> flip</p>
       </aside>
     </div>

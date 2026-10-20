@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Level from '../../components/Level.astro';
 import Player from '../../components/Player.astro';
+import Edges from '../../components/Edges.astro';
 import Steps from '../../components/Steps.astro';
 import { STITCHES, type Stitch } from '../../lib/stitches.ts';
 import { PROJECTS } from '../../lib/projects.ts';
@@ -29,21 +30,12 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         All stitches
       </a>
-      <div class="pager">
-        {prev ? (
-          <a class="go" href={`/stitches/${prev.slug}/`} rel="prev" aria-label={`Previous stitch: ${prev.name}`}>
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span class="name">{prev.name}</span>
-          </a>
-        ) : <span class="go off" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>}
-        <span class="where eyebrow">{s.family} · <span class="num">{n}</span> of 25</span>
-        {next ? (
-          <a class="go" href={`/stitches/${next.slug}/`} rel="next" aria-label={`Next stitch: ${next.name}`}>
-            <span class="name">{next.name}</span>
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
-        ) : <span class="go off" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>}
-      </div>
+      <span class="where eyebrow">{s.family} · <span class="num">{n}</span> of 25</span>
+      <Edges
+        kind="stitch"
+        prev={prev && { href: `/stitches/${prev.slug}/`, name: prev.name }}
+        next={next && { href: `/stitches/${next.slug}/`, name: next.name }}
+      />
     </nav>
 
     <div class="body">
@@ -88,7 +80,7 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
       </ul>
       {inProjects.length > 0 && (
         <p class="try">
-          Try it in a guided project:
+          Try it in a guided project:{' '}
           {inProjects.map((p, k) => <>{k > 0 && ', '}<a href={`/projects/${p.slug}/`}>{p.name}</a></>)}
         </p>
       )}

@@ -39,11 +39,12 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
         <p class="use blurb"></p>
         <p class="note" hidden></p>
       </header>
-      <Player name="Your design" steps={['']} practice={false} />
+      <Player name="Your design" steps={['']} practice={false}>
+        <p class="pen">The blue lines are the pattern, drawn on in water-soluble pen. A damp cloth lifts them when you finish.</p>
+      </Player>
       <aside class="guide">
         <h3 class="eyebrow">Step by step</h3>
         <div class="list"><Steps items={[]} /></div>
-        <p class="pen">The blue lines are the pattern, drawn on in water-soluble pen. A damp cloth lifts them when you finish.</p>
       </aside>
     </div>
     <section class="good" aria-labelledby="why-h">
