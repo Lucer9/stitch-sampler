@@ -180,7 +180,6 @@ class Hero {
   /** Motifs in the spotlight; kept after the pointer leaves so the dim can fade out. */
   private lit: Motif[] = [];
   private fade = 0;
-  private spot: HTMLCanvasElement | null = null;
   private tip: HTMLElement;
   private reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   private numbers = new Map(STITCHES.map((s, i) => [s.slug, { n: i + 1, name: s.name }]));
@@ -254,33 +253,12 @@ class Hero {
       }
       live.push(bare(frameAt(mo.prog!, lt)));
     }
+    const lit = this.lit.filter((mo) => this.t >= mo.t0!).map((mo) => bare(frameAt(mo.prog!, Math.min(this.t - mo.t0!, mo.prog!.dur + 1))));
     this.scene.draw(live, {
       side: 'front',
       base: this.baked ?? undefined,
-      after: this.fade > 0 ? (g) => this.spotlight(g) : undefined,
+      after: this.fade > 0 ? (g) => this.scene.spotlight(g, lit, this.fade) : undefined,
     });
-  }
-
-  /** Veils the cloth in linen, then repaints the lit motifs on top so everything else recedes. */
-  private spotlight(g: CanvasRenderingContext2D) {
-    const { W, H, cx, cy, s } = this.scene;
-    const spot = (this.spot ??= document.createElement('canvas'));
-    if (spot.width !== W || spot.height !== H) {
-      spot.width = W;
-      spot.height = H;
-    }
-    spot.getContext('2d')!.clearRect(0, 0, W, H);
-    const frames = this.lit.filter((mo) => this.t >= mo.t0!).map((mo) => bare(frameAt(mo.prog!, Math.min(this.t - mo.t0!, mo.prog!.dur + 1))));
-    this.scene.bake(frames, spot);
-    g.save();
-    g.globalAlpha = this.fade * 0.7;
-    g.fillStyle = '#efe4ca';
-    g.beginPath();
-    g.arc(cx, cy, this.scene.o.R * 1.02 * s, 0, Math.PI * 2);
-    g.fill();
-    g.globalAlpha = this.fade;
-    g.drawImage(spot, 0, 0);
-    g.restore();
   }
 
   private point(e: PointerEvent) {

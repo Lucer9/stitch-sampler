@@ -32,32 +32,50 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
     </form>
   </section>
 
-  <article class="wrap lesson made" data-player data-project="" hidden>
-    <div class="body">
-      <header class="head">
-        <h2 class="title"></h2>
-        <p class="use blurb"></p>
+  <div class="wrap made" hidden>
+    <section class="result" aria-labelledby="look-h">
+      <div class="hoopwrap">
+        <canvas class="finished" role="img"></canvas>
+        <div class="tip" aria-hidden="true"></div>
+      </div>
+      <div class="info">
+        <p class="eyebrow">Your design</p>
+        <h2 id="look-h" class="title"></h2>
+        <p class="blurb"></p>
         <p class="note" hidden></p>
-      </header>
-      <Player name="Your design" steps={['']} practice={false}>
-        <p class="pen">The blue lines are the pattern, drawn on in water-soluble pen. A damp cloth lifts them when you finish.</p>
-      </Player>
-      <aside class="guide">
-        <h3 class="eyebrow">Step by step</h3>
-        <div class="list"><Steps items={[]} /></div>
-      </aside>
-    </div>
-    <section class="good" aria-labelledby="why-h">
-      <h2 id="why-h">Why these stitches</h2>
-      <ul class="why"></ul>
+        <p class="hint">Hover a part to see its stitch. Click it to learn that step.</p>
+        <ol class="parts"></ol>
+        <button type="button" class="btn start">
+          Start the tutorial
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 4v11m-4.5-4.5L10 15l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
     </section>
-  </article>
+
+    <article class="lesson tutorial" data-player data-project="" aria-labelledby="tut-h">
+      <div class="body">
+        <header class="head">
+          <p class="eyebrow">Tutorial</p>
+          <h2 id="tut-h" class="sub">Stitch it step by step</h2>
+        </header>
+        <Player name="Your design" steps={['']} practice={false}>
+          <p class="pen">The blue lines are the pattern, drawn on in water-soluble pen. A damp cloth lifts them when you finish.</p>
+        </Player>
+        <aside class="guide">
+          <div class="list"><Steps items={[]} /></div>
+        </aside>
+      </div>
+    </article>
+  </div>
 </Base>
 
 <script>
   import { fromAI, type AIDesign } from '../lib/design.ts';
-  import { lesson } from '../lib/projects.ts';
+  import { lesson, partOps } from '../lib/projects.ts';
   import { playLesson } from '../lib/player.ts';
+  import { explore } from '../lib/explore.ts';
+  import { compile } from '../lib/engine.ts';
+  import { T } from '../lib/stitches.ts';
 
   const form = document.querySelector<HTMLFormElement>('.box')!;
   const prompt = form.querySelector<HTMLTextAreaElement>('#prompt')!;
@@ -66,8 +84,12 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
   const status = form.querySelector<HTMLElement>('.status')!;
   const go = form.querySelector<HTMLButtonElement>('.go')!;
   const out = document.querySelector<HTMLElement>('.made')!;
+  const tut = out.querySelector<HTMLElement>('.tutorial')!;
+  const legend = out.querySelector<HTMLElement>('.parts')!;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let photo: { type: string; data: string } | null = null;
   let player: { stop: () => void } | null = null;
+  let view: ReturnType<typeof explore> | null = null;
 
   const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
@@ -104,7 +126,7 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
     thumb.hidden = true;
   });
 
-  const waits = ['Sketching the pattern…', 'Choosing a stitch for each part…', 'Tracing it onto the linen…'];
+  const waits = ['Sketching the pattern…', 'Breaking it into sections…', 'Choosing a stitch for each part…', 'Picking floss shades…', 'Layering the details…', 'Tracing it onto the linen…'];
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -116,7 +138,7 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
     form.dataset.busy = '';
     let k = 0;
     status.textContent = waits[0];
-    const tick = setInterval(() => (status.textContent = waits[++k % waits.length]), 6000);
+    const tick = setInterval(() => (status.textContent = waits[++k % waits.length]), 9000);
     try {
       const res = await fetch('/api/design', {
         method: 'POST',
@@ -136,6 +158,12 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
     }
   });
 
+  /** Plays the tutorial from part `k`. */
+  function learn(k: number) {
+    tut.querySelector<HTMLButtonElement>(`[data-step="${k}"]`)?.click();
+    tut.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+  }
+
   function show(d: AIDesign) {
     const { project, why } = fromAI(d);
     const l = lesson(project);
@@ -144,21 +172,43 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
     const note = out.querySelector<HTMLElement>('.note')!;
     note.textContent = d.note ?? '';
     note.hidden = !d.note;
-    out.querySelector('.list')!.innerHTML = `<ol class="steps">${project.parts.map((p, k) => `
+    legend.innerHTML = project.parts.map((p, k) => `
+      <li><button type="button" data-part="${k}">
+        <span class="dot" style="background:${p.floss[1]}"></span>
+        <span><strong>${esc(why[k].name)}</strong> <span class="dim">${esc(p.floss[0])}</span><span class="why">${esc(why[k].why)}</span></span>
+      </button></li>`).join('');
+    tut.querySelector('.list')!.innerHTML = `<ol class="steps">${project.parts.map((p, k) => `
       <li><button type="button" data-step="${k}"${k === 0 ? ' data-on' : ''}>
         <span class="k">${k + 1}</span>
-        <span class="txt"><span class="tag"><span class="dot" style="background:${p.floss[1]}"></span>${esc(why[k].name)}</span><span>${esc(p.step)}</span></span>
+        <span class="txt"><span class="tag"><span class="dot" style="background:${p.floss[1]}"></span><a href="/stitches/${p.stitch}/">${esc(why[k].name)}</a></span><span>${esc(p.step)}</span></span>
       </button></li>`).join('')}</ol>`;
-    out.querySelector('.why')!.innerHTML = why.map((w) => `
-      <li><span class="dot" style="background:${w.color}"></span><a href="/stitches/${w.stitch}/">${esc(w.name)}</a><p>${esc(w.why)}</p></li>`).join('');
-    out.querySelector('canvas.hoop')!.setAttribute('aria-label', `${project.name} being stitched on linen in an embroidery hoop. ${l.steps.join(' ')}`);
-    out.querySelector('.now-n')!.textContent = `Step 1 of ${l.steps.length}`;
-    out.querySelector('.now-t')!.textContent = l.steps[0];
+    tut.querySelector('canvas.hoop')!.setAttribute('aria-label', `${project.name} being stitched on linen in an embroidery hoop. ${l.steps.join(' ')}`);
+    tut.querySelector('.now-n')!.textContent = `Step 1 of ${l.steps.length}`;
+    tut.querySelector('.now-t')!.textContent = l.steps[0];
+    const finished = out.querySelector<HTMLCanvasElement>('canvas.finished')!;
+    finished.setAttribute('aria-label', `${project.name}, finished, in an embroidery hoop. Parts: ${why.map((w) => w.name).join(', ')}.`);
     out.hidden = false;
     player?.stop();
-    player = playLesson(out, l);
-    out.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    view?.stop();
+    player = playLesson(tut, l);
+    const regions = project.parts.map((p, k) => ({
+      prog: compile(partOps(p, k), { th: T(p.floss[1]) }),
+      name: why[k].name,
+      detail: p.floss[0],
+    }));
+    const items = [...legend.querySelectorAll<HTMLButtonElement>('[data-part]')];
+    view = explore(finished, out.querySelector<HTMLElement>('.result .tip')!, regions, project.R, learn, (k) => items.forEach((b, i) => b.toggleAttribute('data-on', i === k)));
+    items.forEach((b, i) => {
+      b.addEventListener('pointerenter', () => view?.light(i));
+      b.addEventListener('pointerleave', () => view?.light(null));
+      b.addEventListener('focus', () => view?.light(i));
+      b.addEventListener('blur', () => view?.light(null));
+      b.addEventListener('click', () => learn(i));
+    });
+    out.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
   }
+
+  out.querySelector('.start')!.addEventListener('click', () => learn(0));
 </script>
 
 <style>
@@ -315,8 +365,55 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
   .made[hidden] {
     display: none;
   }
+  .result {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(24px, 4vw, 64px);
+  }
+  .hoopwrap {
+    position: relative;
+    margin: -4% -4% -2%;
+  }
+  .finished {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+  .tip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    gap: 3px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--paper);
+    font: 600 14px/1.1 var(--sans);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .tip :global(.dim) {
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+  .tip[data-on] {
+    opacity: 1;
+  }
+  .info {
+    display: grid;
+    gap: 12px;
+  }
   .title {
     font-size: clamp(2.2rem, 4.6vw, 3.6rem);
+  }
+  .blurb {
+    font-size: 18px;
+    color: var(--ink-2);
   }
   .note {
     padding: 12px 14px;
@@ -325,6 +422,70 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
     font-size: 15px;
     color: var(--ink-2);
   }
+  .hint {
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+  .parts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .parts :global(button) {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--ink-2);
+    font: 400 15px/1.35 var(--sans);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+  .parts :global(button[data-on]),
+  .parts :global(button:focus-visible) {
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .parts :global(.dot) {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    margin-top: 3px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(40, 25, 10, 0.25);
+  }
+  .parts :global(strong) {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .parts :global(.dim) {
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+  .parts :global(.why) {
+    display: block;
+    font-size: 14px;
+  }
+  .start {
+    justify-self: start;
+    margin-top: 6px;
+  }
+  .tutorial {
+    margin-top: clamp(64px, 9vw, 112px);
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 16px;
+  }
+  .sub {
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  }
   .pen {
     padding: 14px 16px;
     border-radius: 14px;
@@ -332,43 +493,8 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
     font-size: 15px;
     color: var(--ink-2);
   }
-  .why {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-  }
-  .why :global(li) {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    gap: 6px 10px;
-    padding: 18px;
-    border-radius: 18px;
-    background: var(--card);
-    box-shadow: var(--shadow);
-  }
-  .why :global(.dot) {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    box-shadow: inset 0 0 0 1px rgba(40, 25, 10, 0.25);
-  }
-  .why :global(a) {
-    font: 600 17px/1.2 var(--serif);
-    color: var(--ink);
-    text-decoration-color: var(--accent);
-    text-underline-offset: 3px;
-  }
-  .why :global(p) {
-    grid-column: 1 / -1;
-    font-size: 15px;
-    color: var(--ink-2);
-  }
   @media (max-width: 900px) {
-    .why {
+    .result {
       grid-template-columns: minmax(0, 1fr);
     }
   }

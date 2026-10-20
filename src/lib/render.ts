@@ -111,6 +111,7 @@ export class Scene {
   cx = 0;
   cy = 0;
   private layers = new Map<string, HTMLCanvasElement>();
+  private spot: HTMLCanvasElement | null = null;
 
   constructor(el: HTMLCanvasElement, o: SceneOpts) {
     this.el = el;
@@ -347,6 +348,28 @@ export class Scene {
       trace(g, l);
       g.stroke();
     }
+    g.restore();
+  }
+
+  /** Veils what is drawn so far in linen by `fade`, then repaints `frames` on top, so everything else recedes. */
+  spotlight(g: CanvasRenderingContext2D, frames: Frame[], fade: number) {
+    const { W, H, cx, cy, s } = this;
+    const spot = (this.spot ??= canvas(W, H));
+    if (spot.width !== W || spot.height !== H) {
+      spot.width = W;
+      spot.height = H;
+    }
+    spot.getContext('2d')!.clearRect(0, 0, W, H);
+    this.bake(frames, spot);
+    g.save();
+    g.globalAlpha = fade * 0.7;
+    g.fillStyle = '#efe4ca';
+    g.beginPath();
+    if (this.o.mode === 'hoop') g.arc(cx, cy, this.o.R * 1.02 * s, 0, Math.PI * 2);
+    else g.rect(0, 0, W, H);
+    g.fill();
+    g.globalAlpha = fade;
+    g.drawImage(spot, 0, 0);
     g.restore();
   }
 
