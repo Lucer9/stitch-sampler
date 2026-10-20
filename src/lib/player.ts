@@ -21,7 +21,7 @@ class Player {
   private side: SideView | null = null;
   private t = 0;
   private playing = false;
-  private speed = 1;
+  private speed = 0.5;
   private view: 'front' | 'back' = 'front';
   private stopAt: number | null = null;
   private held = 0;

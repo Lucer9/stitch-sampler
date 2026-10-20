@@ -21,6 +21,8 @@ export interface Stitch {
   steps: string[];
   tip: string;
   watch: string;
+  /** Three things the stitch is good for: a short name and one sentence. */
+  good: [string, string][];
   knot?: boolean;
   /** Hoop radius for the player, in fabric units: smaller zooms in. */
   R?: number;
@@ -365,6 +367,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Keep the stitches and the gaps the same length. Evenness is what makes running stitch look deliberate.',
     watch: 'Pulling too hard puckers the fabric. Tug until the thread lies flat, then stop.',
+    good: [['Outlines and dashed borders', 'The simplest line there is. Keep it even and it reads as a neat dashed edge.'], ['Quilting and sashiko', 'Japanese sashiko patterns are rows of running stitch worked through layers of cloth.'], ['Gathering and tacking', 'Long running stitches hold layers together or pull fabric into gathers, then come out.']],
     demo: () => {
       const o: Op[] = [];
       running(o, wave(-30, 30, 0, 6), 7, 4.4);
@@ -383,6 +386,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Use shorter stitches on tight curves. Long stitches turn curves into corners.',
     watch: 'Go down exactly in the previous hole. Missing it by a thread leaves gaps in the line.',
+    good: [['Lettering', 'Solid, even lines with crisp corners make it the go-to for words and names.'], ['Line drawings', 'Clean outlines for redwork and line art, where one unbroken line matters.'], ['Edging other fills', 'A back-stitched outline sharpens a shape filled with satin or seed stitch.']],
     demo: () => {
       const o: Op[] = [];
       back(o, wave(-30, 30, 0, 6), 7.5);
@@ -400,6 +404,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Use an even number of strands (2, 4 or 6) so the needle can split the thread cleanly down the middle.',
     watch: 'Come up from below through the thread. Stabbing down into it from the front frays it.',
+    good: [['Smooth curves', 'Each stitch pierces the one before, so tight curves stay smooth with no corners.'], ['Edges under satin', 'Outline a shape in split stitch first and the satin over it gets a crisp, raised edge.'], ['Filling in rows', 'Packed rows that follow a shape make a fine, tapestry-like fill.']],
     demo: () => {
       const o: Op[] = [];
       split(o, wave(-30, 30, 0, 6), 9);
@@ -417,6 +422,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Keep the thread below the needle for stem stitch. Keep it above and you get outline stitch, which twists the other way.',
     watch: 'Swapping sides partway along breaks the rope and leaves a kink.',
+    good: [['Stems and vines', 'Its twisted, rope-like line is made for stalks and curling tendrils.'], ['Flowing script', 'It bends smoothly through loops, so joined-up lettering stays graceful.'], ['Thicker lines', 'Work rows side by side for a solid stem or a broad branch.']],
     demo: () => {
       const o: Op[] = [];
       stem(o, wave(-30, 30, 0, 7), 9, 0.9);
@@ -434,6 +440,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Whip with a blunt tapestry needle so it can’t split the stitches or catch the fabric.',
     watch: 'Whip loosely. Tight whipping drags the running stitches out of line.',
+    good: [['Bold, smooth lines', 'Whipping turns a dashed line into a smooth, raised cord.'], ['Two-colour lines', 'Whip in a contrasting colour for a candy-stripe twist.'], ['Quick borders', 'Fast to work along a hem or around a shape.']],
     demo: () => {
       const o: Op[] = [];
       whipped(o, wave(-28, 28, 0, 5), 6.5, 2.6, T(C.ochre, 2), 2.4);
@@ -453,6 +460,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'On tight curves, tack every few millimetres so the laid thread follows the line instead of cutting the corner.',
     watch: 'Tack straight across the laid thread, not at a slant, or it starts to twist.',
+    good: [['Threads too thick to sew', 'Wool, cord, ribbon or metallic thread that would fray or snag if pulled through the cloth.'], ['Spirals and lettering', 'The laid thread follows any curve in one sweep.'], ['Goldwork', 'Real metal threads are almost always couched, tacked down with fine silk.']],
     demo: () => {
       const o: Op[] = [];
       couch(o, curve([v(-30, 10), v(-14, -12), v(4, 10), v(20, -10), v(30, 2)]), T(C.gold, 3.6), T(C.madder, 1.4), 6.5);
@@ -471,6 +479,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Stop pulling when the loop is round and lies flat. A tight chain looks like a thin braid.',
     watch: 'Go down in the same hole or right beside it. Too far away and the chain looks open and lumpy.',
+    good: [['Bold outlines', 'A thick, textured line that holds its own from across the room.'], ['Filling shapes', 'Rows worked side by side, or spiralling inward, fill a shape quickly.'], ['Vines and monograms', 'The loops flow round curves, so stems and initials look lovely in it.']],
     demo: () => {
       const o: Op[] = [];
       chain(o, wave(-28, 28, 0, 6), 8.5);
@@ -489,6 +498,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Leave a little room in the middle for a French knot or two.',
     watch: 'Pull too hard and the petal collapses into a thin line. Keep it plump.',
+    good: [['Flower petals', 'Five or six round a centre make a daisy in a few minutes.'], ['Small leaves', 'A single loop off a stem is a quick, plump leaf.'], ['Scattered fill', 'Single loops sprinkled at different angles make a light, textured background.']],
     demo: () => {
       const o: Op[] = [];
       for (let k = 0; k < 5; k++) daisy(o, v(0, 2), -Math.PI / 2 + (k * Math.PI * 2) / 5, 2.8, 15);
@@ -507,6 +517,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'The tacking stitch is the dial: short makes a V, long makes a Y.',
     watch: 'Come up exactly halfway between the arms or the V leans to one side.',
+    good: [['Ferns and fronds', 'Stacked one under the next, the Vs build a fern or a pine branch.'], ['Grass and leaf veins', 'Long tails become stalks; short ones make tufts of grass.'], ['Zigzag borders', 'A row of Vs side by side makes a simple edging.']],
     demo: () => {
       const o: Op[] = [];
       fly(o, v(-9, -20), v(9, -20), v(0, -11), v(0, -8));
@@ -527,6 +538,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Draw two faint guide lines first. Feather stitch looks best when the arms are all the same width.',
     watch: 'Forgetting to keep the loop under the needle gives a plain zigzag that pulls out.',
+    good: [['Foliage and seaweed', 'Its branching zigzag looks like twigs, ferns or waving weed.'], ['Crazy-quilt seams', 'The classic stitch for covering and decorating the seams between patches.'], ['Heirloom edging', 'Delicate borders on baby clothes, collars and hems.']],
     demo: () => {
       const o: Op[] = [];
       feather(o, v(-2.75, -24), v(0, 1), v(1, 0), 11, 8, 6);
@@ -545,6 +557,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Keep the uprights the same height and spacing. Pack them shoulder to shoulder and it becomes buttonhole stitch.',
     watch: 'Pulling the corners too tight bunches the baseline into a wavy line.',
+    good: [['Edging blankets and felt', 'It wraps raw edges so they don\'t fray, the job it\'s named for.'], ['Appliqué', 'Holds a cut-out shape down while outlining it.'], ['Wheels and scallops', 'Worked round a circle with the legs pointing in, it makes a wheel.']],
     demo: () => {
       const o: Op[] = [];
       blanket(o, curve([v(-28, 10), v(0, 4), v(28, 10)]), 11, 6.2);
@@ -562,6 +575,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Mark the outline and a centre line. Keep every bite the same depth toward the middle so the braid stays straight.',
     watch: 'Bites of different depths make the braid wander off the centre line.',
+    good: [['Leaves with a braid', 'Worked across a leaf, it fills it with a plaited centre vein.'], ['Decorative bands', 'A row gives a woven, open band for borders.'], ['Feathery fronds', 'Change the depth of the bites for a looser, feathery look.']],
     demo: () => {
       const o: Op[] = [];
       cretan(o, curve([v(-26, 15), v(0, 2), v(26, -14)]), 13, leaf(12), 2);
@@ -579,6 +593,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Every top stitch must lean the same direction. That consistency is what makes cross stitch look neat.',
     watch: 'Count the fabric threads for each cross; eyeballing it gives crosses of different sizes.',
+    good: [['Counted patterns', 'Worked over the threads of even-weave fabric or Aida, following a chart.'], ['Samplers and alphabets', 'Square cells make blocky letters and the classic sampler motifs.'], ['Pixel pictures', 'Every cross is a pixel, so almost any small picture can be charted.']],
     demo: () => {
       const o: Op[] = [];
       cross(o, v(-18, -4.5), 9, 4);
@@ -597,6 +612,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Rule two parallel guide lines and keep the small back-steps the same size.',
     watch: 'Uneven back-steps make the crossings drift up and down the band.',
+    good: [['Bands and borders', 'A criss-crossed band that fills a strip quickly.'], ['Hems and appliqué', 'Holds a folded edge flat without much showing on the front.'], ['Shadow work', 'Worked closed on the back of sheer fabric, the colour glows softly through.']],
     demo: () => {
       const o: Op[] = [];
       herringbone(o, v(-29, 0), 13, 10, 3.5, 8);
@@ -614,6 +630,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Outline the shape in split stitch first and stitch over it. The edge comes out crisp and slightly raised.',
     watch: 'Stitches longer than about a centimetre snag and sag. Use long and short stitch for big shapes.',
+    good: [['Small solid shapes', 'Petals, leaves, dots and berries with a smooth, glossy surface.'], ['Monograms', 'Padded satin letters are the classic finish on table and bed linen.'], ['Bold accents', 'A small solid shape draws the eye in a design made of lines.']],
     demo: () => {
       const o: Op[] = [];
       const P = track(curve([v(-26, 14), v(0, 3), v(26, -14)]));
@@ -635,6 +652,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Angle every stitch toward one point, like the centre of the flower, so the shading flows.',
     watch: 'Rows of equal-length stitches leave a visible stripe between shades. Stagger them.',
+    good: [['Shading and blending', 'Rows interlock so one colour melts into the next. This is thread painting.'], ['Large fills', 'Covers areas too wide for satin stitch, which would sag and snag.'], ['Realistic flowers and birds', 'Petals that fade from tip to base, feathers with soft gradients.']],
     demo: () => {
       const o: Op[] = [];
       const c = v(0, 21);
@@ -661,6 +679,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Keep each stitch close to the one before it at the edge; the angle takes care of itself.',
     watch: 'Crossing too far over the centre makes the vein wide and messy.',
+    good: [['Leaves', 'Fills a leaf and draws its centre vein at the same time.'], ['Feathers', 'The angled stitches mimic the barbs of a feather.'], ['Pointed petals', 'Tulip and lily petals with a natural line down the middle.']],
     demo: () => {
       const o: Op[] = [];
       fishbone(o, curve([v(4, -30), v(-2, -4), v(3, 28)]), leaf(13), 11, 2.2);
@@ -677,6 +696,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Spread out, seeds read as a light tint; packed together, they read as shadow.',
     watch: 'Long jumps across the back show through light fabric. Work in small patches.',
+    good: [['Textured fills', 'Speckled areas like sand, gravel, bread or fur.'], ['Shading by density', 'Pack seeds close for dark areas and spread them out for light ones.'], ['Light backgrounds', 'A loose scatter behind a motif fills the cloth without weighing it down.']],
     demo: () => {
       const o: Op[] = [];
       seeds(o, v(0, 0), 25, 40, 4, 9, 5.6);
@@ -694,6 +714,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Weave with a blunt tapestry needle and keep the tension loose so the rose stays plump.',
     watch: 'An even number of spokes breaks the over-under pattern: every round lands on the same spokes.',
+    good: [['Roses', 'The spiral of weaving reads at once as a full, round rose.'], ['Berries and buttons', 'Small wheels make raised dots for berries, buttons or flower centres.'], ['Raised texture', 'It sits up off the cloth, adding depth next to flat stitches.']],
     demo: () => {
       const o: Op[] = [];
       wheel(o, v(0, 0), 18, 2.2);
@@ -711,6 +732,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Keep the working thread taut while the needle goes down. Slack thread is what makes knots messy.',
     watch: 'Going down in the exact same hole pulls the knot through to the back.',
+    good: [['Flower centres', 'A cluster of knots is the classic middle of a daisy or sunflower.'], ['Dots and eyes', 'Single knots for the eyes of birds and animals, berries, or full stops.'], ['Textured fills', 'Packed knots for a sheep\'s fleece, moss or a pebbly path.']],
     demo: () => {
       const o: Op[] = [];
       [-14, 0, 14].forEach((x) => knot(o, v(x, 0), 2.2));
@@ -728,6 +750,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'The figure eight makes a knot that sits up and keeps its shape better than a French knot.',
     watch: 'Loose wraps make a floppy knot. Snug them down before you pull through.',
+    good: [['Neat raised dots', 'Firmer and more even than a French knot, and less likely to pull through.'], ['Candlewicking', 'The traditional knot of white-on-white candlewick designs.'], ['Grapes and lilac', 'Clusters and cones built from rows of knots.']],
     demo: () => {
       const o: Op[] = [];
       [-14, 0, 14].forEach((x) => knot(o, v(x, 0), 2.2, 2, 'colonial'));
@@ -746,6 +769,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Use a long, narrow needle (a milliner’s needle) whose eye is no wider than its shaft, so it slides through the wraps.',
     watch: 'Too few wraps and the knot arches; too many and it bunches. Wrap to the stitch length.',
+    good: [['Roses and rosebuds', 'Two or three curved bullions make a bud; add more for a full rose.'], ['Lavender and wheat', 'Short bullions up a stem make lavender heads or ears of wheat.'], ['Caterpillars and cords', 'Long coils for small creatures and raised, rope-like accents.']],
     demo: () => {
       const o: Op[] = [];
       bullion(o, v(5, -7), v(-7, -7), 9);
@@ -765,6 +789,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Fan them out from a single centre to make a dandelion clock.',
     watch: 'If the wraps slide off before the needle goes down, the knot ends up at the wrong end.',
+    good: [['Stamens', 'A long tail with a knot at the end, fanned round a flower\'s centre.'], ['Fireworks and dandelion clocks', 'A ring of them bursts outward like a firework.'], ['Seed heads', 'Grasses and alliums with dots on stalks.']],
     demo: () => {
       const o: Op[] = [];
       for (let k = 0; k < 5; k++) pistil(o, v(0, 16), -Math.PI / 2 + (k - 2) * 0.42, 2, 24);
@@ -782,6 +807,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Leave the first stitch a little loose; the knot pulls it tight.',
     watch: 'Piercing the fabric under the crossing locks the knot in the wrong place.',
+    good: [['Stars and sparkles', 'A cross with a knot in the middle reads as a little star.'], ['Scattered fills', 'Spaced evenly, it makes a dotted, textured background.'], ['Tiny flowers', 'In a bright colour it doubles as a four-petalled bloom.']],
     demo: () => {
       const o: Op[] = [];
       [-16, 0, 16].forEach((x) => fourLegged(o, v(x, 0), 6));
@@ -799,6 +825,7 @@ export const STITCHES: Stitch[] = [
     ],
     tip: 'Space the knots evenly; closer together reads as beads, farther apart as a knotted cord.',
     watch: 'Forgetting the loop under the needle gives you a plain stitch with no knot.',
+    good: [['Knotted lines', 'Knots spaced along a line, like beads on a string.'], ['Textured stems', 'Gives stems and branches a knobbly, natural look.'], ['Seaweed and coral', 'Wiggly knotted lines for underwater scenes, as the name suggests.']],
     demo: () => {
       const o: Op[] = [];
       coral(o, wave(-28, 28, 0, 7), 7.5);

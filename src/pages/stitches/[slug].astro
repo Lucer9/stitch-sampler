@@ -1,7 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Level from '../../components/Level.astro';
-import StitchCard from '../../components/StitchCard.astro';
 import { STITCHES, type Stitch } from '../../lib/stitches.ts';
 
 export function getStaticPaths() {
@@ -21,12 +20,26 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
 ---
 <Base title={s.name} description={description}>
   <article class="wrap stitch" data-player data-slug={s.slug}>
-    <nav class="crumbs" aria-label="Breadcrumb">
-      <a href="/#stitches">
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <nav class="crumbs" aria-label="Stitches">
+      <a class="all" href="/#stitches">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         All stitches
       </a>
-      <span class="eyebrow">{s.family} · <span class="num">{n}</span> of 25</span>
+      <div class="pager">
+        {prev ? (
+          <a class="go" href={`/stitches/${prev.slug}/`} rel="prev" aria-label={`Previous stitch: ${prev.name}`}>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="name">{prev.name}</span>
+          </a>
+        ) : <span class="go off" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>}
+        <span class="where eyebrow">{s.family} · <span class="num">{n}</span> of 25</span>
+        {next ? (
+          <a class="go" href={`/stitches/${next.slug}/`} rel="next" aria-label={`Next stitch: ${next.name}`}>
+            <span class="name">{next.name}</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        ) : <span class="go off" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>}
+      </div>
     </nav>
 
     <div class="body">
@@ -71,8 +84,8 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
         </button>
         <input class="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline" />
         <div class="speed" role="group" aria-label="Speed">
-          <button type="button" data-speed="0.5" aria-pressed="false">½×</button>
-          <button type="button" data-speed="1" aria-pressed="true">1×</button>
+          <button type="button" data-speed="0.5" aria-pressed="true">½×</button>
+          <button type="button" data-speed="1" aria-pressed="false">1×</button>
           <button type="button" data-speed="2" aria-pressed="false">2×</button>
         </div>
       </div>
@@ -128,20 +141,24 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
     </aside>
     </div>
 
-    <nav class="pager" aria-label="More stitches">
-      {prev ? <StitchCard s={prev} n={i} label="Previous" /> : <span />}
-      {next ? <StitchCard s={next} n={i + 2} label="Next" /> : <span />}
-    </nav>
+    <section class="good" aria-labelledby="good-h">
+      <h2 id="good-h">What it’s good for</h2>
+      <ul>
+        {s.good.map(([title, text], k) => (
+          <li>
+            <span class="gn num">{String(k + 1).padStart(2, '0')}</span>
+            <h3>{title}</h3>
+            <p>{text}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
   </article>
 </Base>
 
 <script>
   import { mountPlayer } from '../../lib/player.ts';
-  import { mountSwatches } from '../../lib/swatch.ts';
-  document.fonts.ready.then(() => {
-    mountPlayer();
-    mountSwatches();
-  });
+  document.fonts.ready.then(() => mountPlayer());
 </script>
 
 <style>
@@ -167,9 +184,8 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
   .crumbs a {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     min-height: 44px;
-    padding-right: 10px;
     font: 500 15px/1 var(--sans);
     color: var(--ink-2);
     text-decoration: none;
@@ -178,8 +194,50 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
     color: var(--ink);
   }
   .crumbs svg {
+    flex: none;
     width: 20px;
     height: 20px;
+  }
+  .pager {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .go {
+    padding: 0 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+  a.go:hover {
+    border-color: var(--ink-3);
+    background: var(--card);
+  }
+  .go.off {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    color: var(--ink-3);
+    opacity: 0.45;
+  }
+  a.go:first-child {
+    padding-left: 8px;
+  }
+  a.go:last-child {
+    padding-right: 8px;
+  }
+  .name {
+    max-width: 16ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .where {
+    padding: 0 10px;
+    white-space: nowrap;
   }
   .head {
     grid-area: head;
@@ -506,12 +564,42 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
     text-align: center;
     color: var(--ink-2);
   }
-  .pager {
+  .good {
+    margin-top: clamp(64px, 9vw, 112px);
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+  .good h2 {
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+    margin-bottom: 24px;
+  }
+  .good ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 300px));
-    justify-content: space-between;
-    gap: 16px;
-    margin-top: 80px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .good li {
+    padding: 22px;
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .gn {
+    display: block;
+    margin-bottom: 10px;
+    font: 600 14px/1 var(--sans);
+    color: var(--accent);
+  }
+  .good h3 {
+    font-size: 21px;
+    margin-bottom: 6px;
+  }
+  .good p {
+    font-size: 15px;
+    color: var(--ink-2);
   }
   @media (max-width: 900px) {
     .body {
@@ -524,6 +612,13 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
     }
     .guide {
       margin-top: 40px;
+    }
+    .name {
+      display: none;
+    }
+    a.go:first-child,
+    a.go:last-child {
+      padding: 0 12px;
     }
     .hoopbox {
       margin: -16px auto -8px;
@@ -553,9 +648,15 @@ const description = `${s.name}: ${s.use} An animated, step-by-step guide that sh
     .keys {
       display: none;
     }
-    .pager {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+    .good ul {
+      grid-template-columns: minmax(0, 1fr);
     }
+    .crumbs .all {
+      font-size: 0;
+      gap: 0;
+      width: 44px;
+      justify-content: center;
+    }
+
   }
 </style>
