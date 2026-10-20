@@ -1,7 +1,8 @@
 import { compile, frameAt, type Program, type Hole, type Frame } from './engine.ts';
 import { Scene } from './render.ts';
 import { SideView } from './side.ts';
-import { bySlug, type Stitch } from './stitches.ts';
+import { bySlug } from './stitches.ts';
+import { lesson, projectBySlug, type Lesson } from './projects.ts';
 import { type V, dist } from './geom.ts';
 
 const HOLD = 2.6;
@@ -10,12 +11,13 @@ const NEAR = 2.4;
 
 export function mountPlayer() {
   const root = document.querySelector<HTMLElement>('[data-player]');
-  if (root) new Player(root, bySlug(root.dataset.slug!));
+  if (!root) return;
+  new Player(root, root.dataset.project ? lesson(projectBySlug(root.dataset.project)) : bySlug(root.dataset.slug!));
 }
 
 class Player {
   private root: HTMLElement;
-  private s: Stitch;
+  private s: Lesson;
   private prog: Program;
   private scene: Scene;
   private side: SideView | null = null;
@@ -34,7 +36,7 @@ class Player {
   private reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   private $ = <T extends Element>(sel: string) => this.root.querySelector<T>(sel)!;
 
-  constructor(root: HTMLElement, s: Stitch) {
+  constructor(root: HTMLElement, s: Lesson) {
     this.root = root;
     this.s = s;
     const d = s.demo();
@@ -220,6 +222,7 @@ class Player {
       dotR: p ? p.gap * 0.42 : undefined,
       hot: p?.hot,
       bad: p?.bad,
+      pen: this.s.pen,
     });
     this.side?.draw(f, this.prog, this.t);
     this.$<HTMLInputElement>('.scrub').value = String(Math.round((this.t / this.prog.dur) * 1000));

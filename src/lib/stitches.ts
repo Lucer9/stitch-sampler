@@ -1,5 +1,5 @@
 import type { Op, Thread, Under } from './engine.ts';
-import { type V, v, add, sub, mul, lerp, dist, perp, polar, rng, spline, lengths, at } from './geom.ts';
+import { type V, v, add, sub, mul, lerp, dist, dot, perp, polar, rng, spline, lengths, at } from './geom.ts';
 
 export type Family = 'Lines' | 'Loops' | 'Crossed' | 'Fills' | 'Knots';
 export const FAMILIES: { name: Family; blurb: string }[] = [
@@ -301,6 +301,48 @@ export function couch(o: Op[], path: V[], laid: Thread, tack: Thread, gap: numbe
     const s = ((k + 0.5) * P.L) / n;
     o.push(up(add(P.p(s), mul(P.n(s), h)), k === 0 ? { th: tack } : {}), down(sub(P.p(s), mul(P.n(s), h))));
   }
+}
+
+/** Where lines across `poly` along `ang` cross it: one [from, to] pair per stitch, `gap` apart. */
+function scan(poly: V[], ang: number, gap: number): [V, V][] {
+  const u = polar(1, ang);
+  const n = perp(u);
+  const ns = poly.map((p) => dot(p, n));
+  const out: [V, V][] = [];
+  for (let c = Math.min(...ns) + gap / 2; c < Math.max(...ns); c += gap) {
+    const xs: number[] = [];
+    poly.forEach((a, i) => {
+      const b = poly[(i + 1) % poly.length];
+      const da = dot(a, n) - c;
+      const db = dot(b, n) - c;
+      if (da < 0 !== db < 0) xs.push(dot(lerp(a, b, da / (da - db)), u));
+    });
+    xs.sort((p, q) => p - q);
+    for (let k = 0; k + 1 < xs.length; k += 2) out.push([add(mul(n, c), mul(u, xs[k])), add(mul(n, c), mul(u, xs[k + 1]))]);
+  }
+  return out;
+}
+
+/** Satin stitch over any outline: parallel stitches along `ang`, each one up on the near edge and down on the far one. */
+export function satinFill(o: Op[], poly: V[], ang: number, gap: number) {
+  for (const [a, b] of scan(poly, ang, gap)) o.push(up(a), down(b));
+}
+
+/** Long and short over an outline: alternating long and short stitches in `light` from the near edge, then `dark` filling the rest, split into them. */
+export function longShortFill(o: Op[], poly: V[], ang: number, gap: number, light: Thread, dark: Thread) {
+  const rows = scan(poly, ang, gap);
+  rows.forEach(([a, b], k) => o.push(up(a, k === 0 ? { th: light } : {}), down(lerp(a, b, k % 2 ? 0.48 : 0.7))));
+  rows.forEach(([a, b], k) => o.push(up(lerp(a, b, k % 2 ? 0.38 : 0.58), k === 0 ? { th: dark } : {}), down(b)));
+}
+
+/** True if `p` is inside the outline. */
+export function inside(poly: V[], p: V): boolean {
+  let hit = false;
+  poly.forEach((a, i) => {
+    const b = poly[(i + 1) % poly.length];
+    if (a.y > p.y !== b.y > p.y && p.x < a.x + ((p.y - a.y) * (b.x - a.x)) / (b.y - a.y)) hit = !hit;
+  });
+  return hit;
 }
 
 export function wheel(o: Op[], c: V, R: number, w: number, spokes = 5, rot0 = -Math.PI / 2) {

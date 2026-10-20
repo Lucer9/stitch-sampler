@@ -1,8 +1,9 @@
 import { compile, frameAt } from './engine.ts';
 import { Scene } from './render.ts';
 import { bySlug } from './stitches.ts';
+import { lesson, projectBySlug } from './projects.ts';
 
-/** Renders every `canvas[data-swatch]` once it nears the viewport; hovering its link replays the stitch. `data-zoom` crops in on the middle. */
+/** Renders every `canvas[data-swatch]` (a stitch, or with `data-project` a project) once it nears the viewport; hovering its link replays it. `data-zoom` crops in on the middle. */
 export function mountSwatches() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const io = new IntersectionObserver(
@@ -19,7 +20,7 @@ export function mountSwatches() {
 }
 
 function swatch(el: HTMLCanvasElement, reduce: boolean) {
-  const d = bySlug(el.dataset.swatch!).demo();
+  const d = el.dataset.project ? lesson(projectBySlug(el.dataset.project)).demo() : bySlug(el.dataset.swatch!).demo();
   const prog = compile(d.ops, d);
   const b = prog.box;
   const size = (Math.max(b.x1 - b.x0, b.y1 - b.y0) * 1.22 + 6) / +(el.dataset.zoom ?? 1);

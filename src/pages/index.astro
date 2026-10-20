@@ -1,7 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
 import StitchCard from '../components/StitchCard.astro';
+import ProjectCard from '../components/ProjectCard.astro';
 import { STITCHES, FAMILIES } from '../lib/stitches.ts';
+import { PROJECTS } from '../lib/projects.ts';
 
 const kit = [
   { name: 'A hoop', note: 'Wood or plastic, 4 to 6 inches. It keeps the fabric drum-tight so stitches stay even.', icon: 'hoop' },
@@ -78,6 +80,17 @@ const kit = [
         </section>
       );
     })}
+  </section>
+
+  <section id="projects" class="projects wrap" aria-labelledby="proj-h">
+    <header>
+      <h2 id="proj-h">Guided projects</h2>
+      <p>Put a few stitches together. Each one draws its pattern on the linen, then stitches it a colour at a time.</p>
+      <span class="count">{PROJECTS.length} projects</span>
+    </header>
+    <div class="pgrid">
+      {PROJECTS.map((p) => <ProjectCard p={p} />)}
+    </div>
   </section>
 
   <section id="kit" class="kit wrap" aria-labelledby="kit-h">
@@ -262,6 +275,7 @@ const kit = [
     scroll-margin-top: 24px;
   }
   .family header,
+  .projects header,
   .kit header {
     display: flex;
     flex-wrap: wrap;
@@ -277,14 +291,25 @@ const kit = [
     color: var(--ink-3);
   }
   .family h2,
+  .projects h2,
   .kit h2 {
     font-size: clamp(2rem, 4vw, 3rem);
   }
   .family header p,
+  .projects header p,
   .kit header p {
     color: var(--ink-2);
   }
   .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .projects {
+    margin-top: clamp(80px, 12vw, 150px);
+    scroll-margin-top: 24px;
+  }
+  .pgrid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
@@ -335,6 +360,10 @@ const kit = [
     .grid,
     .kit ul {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .pgrid {
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 460px;
     }
   }
   @media (max-width: 560px) {

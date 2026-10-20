@@ -23,6 +23,8 @@ export interface DrawOpts {
   bad?: number;
   time?: number;
   numbers?: boolean;
+  /** Pattern lines traced on the front in water-soluble pen, under the stitches. */
+  pen?: V[][];
 }
 
 type Tone = { base: string; dark: string; deep: string; light: string; rgb: [number, number, number] };
@@ -325,12 +327,27 @@ export class Scene {
     g.clearRect(0, 0, this.W, this.H);
     g.drawImage(this.cloth(o.side), 0, 0);
     if (o.base) g.drawImage(o.base, 0, 0);
+    if (o.pen && o.side === 'front') this.pen(g, o.pen);
     this.paint(g, frames, o.side, o.pierced);
     g.setTransform(1, 0, 0, 1, 0, 0);
     o.after?.(g);
     g.drawImage(this.ring(o.side), 0, 0);
     const w0 = frames[0]?.pieces.find((p) => 'th' in p)?.th.width ?? 2;
     this.labels(o, w0);
+  }
+
+  private pen(g: CanvasRenderingContext2D, lines: V[][]) {
+    g.save();
+    g.setTransform(this.s, 0, 0, this.s, this.cx, this.cy);
+    g.strokeStyle = 'rgba(48, 92, 168, 0.55)';
+    g.lineWidth = 0.3;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    for (const l of lines) {
+      trace(g, l);
+      g.stroke();
+    }
+    g.restore();
   }
 
   /** Paints frames onto a transparent layer the size of the scene, for content that has stopped moving. */

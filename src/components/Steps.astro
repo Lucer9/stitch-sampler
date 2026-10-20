@@ -1,0 +1,91 @@
+---
+interface Props {
+  /** One per caption; a project step also names its stitch and floss. */
+  items: { text: string; tag?: string; href?: string; color?: string }[];
+}
+const { items } = Astro.props;
+---
+<ol class="steps">
+  {items.map((it, k) => (
+    <li>
+      <button type="button" data-step={k} data-on={k === 0 ? '' : undefined}>
+        <span class="k">{k + 1}</span>
+        <span class="txt">
+          {it.tag && (
+            <span class="tag">
+              {it.color && <span class="dot" style={`background:${it.color}`}></span>}
+              {it.tag}
+            </span>
+          )}
+          <span>{it.text}</span>
+        </span>
+      </button>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+  }
+  .steps button {
+    display: flex;
+    gap: 14px;
+    width: 100%;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--ink-2);
+    font: 400 16px/1.45 var(--sans);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .steps button:hover {
+    background: var(--paper-2);
+  }
+  .steps button[data-on] {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .k {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    font: 600 13px/1 var(--sans);
+    color: var(--ink-3);
+    transition: all 0.2s ease;
+  }
+  [data-on] .k {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .txt {
+    display: grid;
+    gap: 4px;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 13px/1.2 var(--sans);
+    color: var(--ink);
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(40, 25, 10, 0.25);
+  }
+</style>

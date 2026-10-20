@@ -1,0 +1,182 @@
+---
+import Base from '../../layouts/Base.astro';
+import Level from '../../components/Level.astro';
+import Player from '../../components/Player.astro';
+import Steps from '../../components/Steps.astro';
+import { PROJECTS, floss, type Project } from '../../lib/projects.ts';
+import { bySlug } from '../../lib/stitches.ts';
+
+export function getStaticPaths() {
+  return PROJECTS.map((p, i) => ({ params: { slug: p.slug }, props: { p, i } }));
+}
+
+interface Props {
+  p: Project;
+  i: number;
+}
+
+const { p, i } = Astro.props;
+const prev = PROJECTS[i - 1];
+const next = PROJECTS[i + 1];
+const used = [...new Set(p.parts.map((part) => part.stitch))].map(bySlug);
+const steps = p.parts.map((part) => part.step);
+const items = p.parts.map((part) => ({ text: part.step, tag: bySlug(part.stitch).name, color: part.floss[1] }));
+---
+<Base title={p.name} description={`${p.name}: ${p.blurb} A guided, animated embroidery project.`}>
+  <article class="wrap lesson" data-player data-project={p.slug}>
+    <nav class="crumbs" aria-label="Projects">
+      <a class="all" href="/#projects">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        All projects
+      </a>
+      <div class="pager">
+        {prev ? (
+          <a class="go" href={`/projects/${prev.slug}/`} rel="prev" aria-label={`Previous project: ${prev.name}`}>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="name">{prev.name}</span>
+          </a>
+        ) : <span class="go off" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>}
+        <span class="where eyebrow">Project · <span class="num">{String(i + 1).padStart(2, '0')}</span> of {PROJECTS.length}</span>
+        {next ? (
+          <a class="go" href={`/projects/${next.slug}/`} rel="next" aria-label={`Next project: ${next.name}`}>
+            <span class="name">{next.name}</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        ) : <span class="go off" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>}
+      </div>
+    </nav>
+
+    <div class="body">
+      <header class="head">
+        <h1>{p.name}</h1>
+        <div class="meta">
+          <Level level={p.level} />
+          <span class="count">{p.parts.length} steps · {used.length} stitches</span>
+        </div>
+        <p class="use">{p.blurb}</p>
+      </header>
+
+      <Player name={p.name} steps={steps} practice={false} vt={`project-${p.slug}`} />
+
+      <aside class="guide">
+        <h2 class="eyebrow">Step by step</h2>
+        <Steps items={items} />
+        <p class="pen">The blue lines are the pattern, drawn on in water-soluble pen. A damp cloth lifts them when you finish.</p>
+        <p class="keys"><kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> step · <kbd>F</kbd> flip</p>
+      </aside>
+    </div>
+
+    <section class="good" aria-labelledby="need-h">
+      <h2 id="need-h">What you’ll need</h2>
+      <div class="need">
+        <div>
+          <h3>Floss</h3>
+          <ul class="floss">
+            {floss(p).map(([n, c]) => (
+              <li><span class="chip" style={`background:${c}`}></span>{n}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3>Stitches</h3>
+          <ul class="used">
+            {used.map((s) => (
+              <li><a href={`/stitches/${s.slug}/`}>{s.name}</a></li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  </article>
+</Base>
+
+<script>
+  import { mountPlayer } from '../../lib/player.ts';
+  document.fonts.ready.then(() => mountPlayer());
+</script>
+
+<style>
+  .count {
+    font: 500 14px/1 var(--sans);
+    color: var(--ink-3);
+  }
+  .pen {
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px dashed rgba(48, 92, 168, 0.45);
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  .keys {
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  kbd {
+    display: inline-block;
+    min-width: 22px;
+    padding: 2px 6px;
+    margin: 0 1px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    font: 600 12px/1.3 var(--sans);
+    text-align: center;
+    color: var(--ink-2);
+  }
+  .need {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .need > div {
+    padding: 22px;
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .need h3 {
+    font-size: 21px;
+    margin-bottom: 12px;
+  }
+  .need ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .floss li,
+  .used a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px 0 8px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    font: 500 14.5px/1 var(--sans);
+    color: var(--ink);
+  }
+  .used a {
+    padding-left: 14px;
+    text-decoration: none;
+  }
+  .used a:hover {
+    background: var(--line);
+  }
+  .chip {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(40, 25, 10, 0.2);
+  }
+  @media (max-width: 560px) {
+    .need {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .keys {
+      display: none;
+    }
+  }
+</style>

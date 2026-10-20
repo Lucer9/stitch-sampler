@@ -8,7 +8,8 @@ export interface Thread { color: string; width: number }
 /** Fractions `a`..`b` of a surface path that pass under the thread laid by op `ref`. */
 export interface Under { a: number; b: number; ref: number }
 
-type Base = { cap?: number | number[]; th?: Thread };
+/** `pace` overrides the tempo for this one move, as a duration multiplier. */
+type Base = { cap?: number | number[]; th?: Thread; pace?: number };
 export type Op = Base & (
   | { k: 'up'; p: V; catch?: boolean; fresh?: boolean }
   | { k: 'down'; p: V; loop?: 'round' | 'sharp'; wf?: number; via?: V[] }
@@ -173,7 +174,7 @@ export function compile(ops: Op[], o: CompileOpts): Program {
   };
 
   ops.forEach((op, i) => {
-    const tempo = (i < (o.slow ?? 8) ? 1 : o.fast ?? 0.6) * (o.pace ?? 1);
+    const tempo = (op.pace ?? (i < (o.slow ?? 8) ? 1 : o.fast ?? 0.6)) * (o.pace ?? 1);
     const fresh = op.k === 'up' && (!cur || !!op.fresh || (!!op.th && op.th !== th));
     if (op.th) th = op.th;
     const thr = th;

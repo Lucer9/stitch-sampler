@@ -1,0 +1,80 @@
+---
+import type { Project } from '../lib/projects.ts';
+import { bySlug } from '../lib/stitches.ts';
+import Level from './Level.astro';
+
+interface Props {
+  p: Project;
+}
+
+const { p } = Astro.props;
+const used = [...new Set(p.parts.map((part) => part.stitch))].map((s) => bySlug(s).name);
+---
+<a class="card" href={`/projects/${p.slug}/`}>
+  <span class="hoop">
+    <canvas data-swatch="" data-project={p.slug} aria-hidden="true" style={`view-transition-name:project-${p.slug}`}></canvas>
+  </span>
+  <span class="txt">
+    <span class="name">{p.name}</span>
+    <span class="use">{p.blurb}</span>
+    <span class="uses">{used.join(' · ')}</span>
+    <Level level={p.level} />
+  </span>
+</a>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 26px 18px 20px;
+    border-radius: 18px;
+    text-decoration: none;
+    color: inherit;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .card:hover {
+    transform: translateY(-3px);
+  }
+  .hoop {
+    display: block;
+    width: 78%;
+    margin: 0 auto;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #e3d6bc;
+    box-shadow:
+      0 0 0 7px #d3a66c,
+      0 0 0 9px #93622f,
+      0 14px 24px -10px rgba(60, 35, 10, 0.5);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .txt {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 4px;
+  }
+  .name {
+    font: 560 23px/1.15 var(--serif);
+    font-variation-settings: 'SOFT' 60, 'opsz' 36;
+    letter-spacing: -0.01em;
+  }
+  .use {
+    color: var(--ink-2);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .uses {
+    margin-bottom: 4px;
+    font: 500 13px/1.4 var(--sans);
+    color: var(--ink-3);
+  }
+</style>

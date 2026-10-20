@@ -1,0 +1,313 @@
+---
+interface Props {
+  name: string;
+  steps: string[];
+  /** Knots get the cross-section view. */
+  knot?: boolean;
+  practice?: boolean;
+  /** view-transition-name for the hoop, so a card can morph into it. */
+  vt?: string;
+}
+const { name, steps, knot = false, practice = true, vt } = Astro.props;
+---
+<section class="stage" aria-label={`${name}, animated`}>
+  <div class="hoopbox">
+    <div class="flipper">
+      <canvas class="hoop" role="img" aria-label={`${name} being stitched on linen in an embroidery hoop. ${steps.join(' ')}`} style={vt ? `view-transition-name:${vt}` : undefined}></canvas>
+    </div>
+    <p class="badge" aria-hidden="true">Back of the fabric</p>
+    <p class="prompt" aria-live="polite"></p>
+    <div class="dots"></div>
+  </div>
+
+  <div class="now">
+    <p class="now-n eyebrow">Step 1 of {steps.length}</p>
+    <p class="now-t" aria-live="off">{steps[0]}</p>
+  </div>
+
+  <div class="controls" role="group" aria-label="Playback">
+    <button type="button" class="ic" data-act="restart" aria-label="Restart" title="Restart">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4.5H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" class="ic" data-act="prev" aria-label="Previous move" title="Previous move (←)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M18 6l-8 6 8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" class="ic play" data-act="play" aria-label="Play" title="Play / pause (space)" data-state="paused">
+      <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>
+      <svg class="i-replay" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4.5H9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" class="ic" data-act="next" aria-label="Next move" title="Next move (→)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M6 6l8 6-8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </button>
+    <input class="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline" />
+    <div class="speed" role="group" aria-label="Speed">
+      <button type="button" data-speed="0.5" aria-pressed="true">½×</button>
+      <button type="button" data-speed="1" aria-pressed="false">1×</button>
+      <button type="button" data-speed="2" aria-pressed="false">2×</button>
+    </div>
+  </div>
+
+  <div class="modes">
+    <button type="button" class="mode" data-act="flip" aria-pressed="false" title="Flip the hoop (F)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M8 7 4 12l4 5M16 7l4 5-4 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Flip to the back</span>
+    </button>
+    {knot && (
+      <button type="button" class="mode" data-act="side" aria-pressed="false" title="Side view (S)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15h18M3 18.5h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="10.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span>Side view</span>
+      </button>
+    )}
+    {practice && <button type="button" class="mode" data-act="practice" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/></svg>
+      <span>Try it yourself</span>
+    </button>}
+  </div>
+
+  {knot && (
+    <figure class="sidebox" hidden>
+      <canvas class="side" aria-hidden="true"></canvas>
+      <figcaption>A cut through the fabric. Watch the wraps slide down the needle and settle on top.</figcaption>
+    </figure>
+  )}
+</section>
+
+<style>
+  .stage {
+    grid-area: stage;
+    align-self: start;
+    position: sticky;
+    top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .hoopbox {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: -36px auto -18px;
+  }
+  .flipper {
+    transform-style: preserve-3d;
+  }
+  .hoop {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+  .badge,
+  .prompt {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font: 600 13px/1.2 var(--sans);
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .badge {
+    bottom: 9%;
+    background: rgba(42, 32, 25, 0.82);
+    color: #fbf4e8;
+    opacity: 0;
+  }
+  :global([data-view='back']) .badge {
+    opacity: 1;
+  }
+  .prompt {
+    top: 12%;
+    background: #fffaf0;
+    color: #2a2019;
+    box-shadow: 0 6px 18px -8px rgba(60, 35, 10, 0.5);
+    opacity: 0;
+  }
+  .prompt.on {
+    opacity: 1;
+  }
+  .dots :global(button) {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+  }
+  .now {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .now-t {
+    font: 450 clamp(19px, 2.2vw, 23px)/1.35 var(--serif);
+    font-variation-settings: 'SOFT' 50, 'opsz' 28;
+    max-width: 40ch;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+  }
+  .ic:hover {
+    background: var(--paper-2);
+  }
+  .ic:active {
+    transform: scale(0.94);
+  }
+  .ic svg {
+    width: 20px;
+    height: 20px;
+  }
+  .play {
+    width: 52px;
+    height: 52px;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .play:hover {
+    background: var(--ink);
+  }
+  .play svg {
+    width: 22px;
+    height: 22px;
+  }
+  .play svg {
+    display: none;
+  }
+  .play[data-state='paused'] .i-play,
+  .play[data-state='playing'] .i-pause,
+  .play[data-state='ended'] .i-replay {
+    display: block;
+  }
+  .scrub {
+    flex: 1;
+    min-width: 40px;
+    margin: 0 8px;
+    accent-color: var(--accent);
+    height: 44px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .speed {
+    display: flex;
+    flex: none;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--paper-2);
+  }
+  .speed button {
+    min-width: 40px;
+    height: 38px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font: 600 13px/1 var(--sans);
+    cursor: pointer;
+  }
+  .speed button[aria-pressed='true'] {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(60, 35, 10, 0.18);
+  }
+  .modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px 0 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font: 600 14px/1 var(--sans);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .mode:hover {
+    border-color: var(--ink-3);
+  }
+  .mode[aria-pressed='true'] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .mode svg {
+    width: 20px;
+    height: 20px;
+  }
+  .sidebox {
+    margin: 4px 0 0;
+    padding: 10px 10px 14px;
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+  }
+  .side {
+    display: block;
+    width: 100%;
+    aspect-ratio: 2.3;
+  }
+  .sidebox figcaption {
+    padding: 4px 8px 0;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  @media (max-width: 900px) {    .stage {
+      position: static;
+    }    .hoopbox {
+      margin: -16px auto -8px;
+    }    .now {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      display: grid;
+      gap: 8px;
+      min-height: 88px;
+    }
+  }
+  @media (max-width: 560px) {    .controls {
+      flex-wrap: wrap;
+      border-radius: 26px;
+      justify-content: center;
+    }    .scrub {
+      order: 9;
+      flex-basis: 100%;
+      margin: 0 10px;
+    }
+  }
+</style>

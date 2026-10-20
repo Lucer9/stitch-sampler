@@ -225,3 +225,175 @@ a {
     navigation: none;
   }
 }
+
+.lesson {
+  padding-top: 8px;
+}
+.lesson .body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'stage head'
+    'stage guide';
+  column-gap: clamp(32px, 5vw, 72px);
+}
+.lesson .crumbs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.lesson .crumbs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font: 500 15px/1 var(--sans);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.lesson .crumbs a:hover {
+  color: var(--ink);
+}
+.lesson .crumbs svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.lesson .pager {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.lesson .go {
+  padding: 0 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.lesson a.go:hover {
+  border-color: var(--ink-3);
+  background: var(--card);
+}
+.lesson .go.off {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--ink-3);
+  opacity: 0.45;
+}
+.lesson a.go:first-child {
+  padding-left: 8px;
+}
+.lesson a.go:last-child {
+  padding-right: 8px;
+}
+.lesson .name {
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lesson .where {
+  padding: 0 10px;
+  white-space: nowrap;
+}
+.lesson .head {
+  grid-area: head;
+  display: grid;
+  gap: 14px;
+  margin-bottom: 28px;
+  max-width: 760px;
+}
+.lesson h1 {
+  font-size: clamp(2.6rem, 5.2vw, 4.2rem);
+}
+.lesson .meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+.lesson .use {
+  font-size: 19px;
+  color: var(--ink-2);
+  max-width: 52ch;
+}
+.lesson .guide {
+  grid-area: guide;
+  align-self: start;
+  display: grid;
+  gap: 18px;
+}
+.lesson .good {
+  margin-top: clamp(64px, 9vw, 112px);
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.lesson .good h2 {
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  margin-bottom: 24px;
+}
+.lesson .good ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.lesson .good li {
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.lesson .gn {
+  display: block;
+  margin-bottom: 10px;
+  font: 600 14px/1 var(--sans);
+  color: var(--accent);
+}
+.lesson .good h3 {
+  font-size: 21px;
+  margin-bottom: 6px;
+}
+.lesson .good p {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+@media (max-width: 900px) {
+  .lesson .body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: 'head' 'stage' 'guide';
+  }
+  .lesson .guide {
+    margin-top: 40px;
+  }
+  .lesson .name {
+    display: none;
+  }
+  .lesson a.go:first-child,
+  .lesson a.go:last-child {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .lesson .good ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lesson .crumbs .all {
+    font-size: 0;
+    gap: 0;
+    width: 44px;
+    justify-content: center;
+  }
+}
