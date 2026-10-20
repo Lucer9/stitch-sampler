@@ -117,9 +117,7 @@ export interface CompileOpts {
   th: Thread;
   /** Needle length in fabric units. */
   needle?: number;
-  /** Ops played at full length before the tempo speeds up. */
-  slow?: number;
-  /** Duration multiplier after the first `slow` ops. */
+  /** Duration multiplier for every move: one tempo for the whole program, so it never seems to speed up. */
   fast?: number;
   /** Global duration multiplier. */
   pace?: number;
@@ -174,7 +172,7 @@ export function compile(ops: Op[], o: CompileOpts): Program {
   };
 
   ops.forEach((op, i) => {
-    const tempo = (op.pace ?? (i < (o.slow ?? 8) ? 1 : o.fast ?? 0.6)) * (o.pace ?? 1);
+    const tempo = (op.pace ?? o.fast ?? 0.7) * (o.pace ?? 1);
     const fresh = op.k === 'up' && (!cur || !!op.fresh || (!!op.th && op.th !== th));
     if (op.th) th = op.th;
     const thr = th;

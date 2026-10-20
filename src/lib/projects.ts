@@ -235,12 +235,12 @@ function posy(): Project {
 export const PROJECTS: Project[] = [lavender(), toadstool(), posy()];
 export const projectBySlug = (slug: string) => PROJECTS.find((p) => p.slug === slug)!;
 
-/** Moves of one part: its colour on the first move, the first few at teaching speed and the rest quicker. */
+/** Moves of one part, with its colour on the first move. */
 function partOps(part: Part, k: number): Op[] {
   const th = T(part.floss[1], W);
   const o: Op[] = [];
   part.make(o, th);
-  return o.map((op, j) => ({ ...op, th: j === 0 ? op.th ?? th : op.th, cap: j === 0 ? k : undefined, pace: j < 6 ? 1 : 0.24 }));
+  return o.map((op, j) => ({ ...op, th: j === 0 ? op.th ?? th : op.th, cap: j === 0 ? k : undefined }));
 }
 
 /** Pattern lines traced from what a part leaves on the front. */
@@ -263,7 +263,7 @@ export function lesson(p: Project): Lesson {
     steps: p.parts.map((part) => part.step),
     R: p.R,
     pen,
-    demo: () => ({ ops, th: T(p.parts[0].floss[1], W), slow: 0 }),
+    demo: () => ({ ops, th: T(p.parts[0].floss[1], W), fast: 0.3 }),
   };
 }
 

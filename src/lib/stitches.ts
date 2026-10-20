@@ -10,7 +10,7 @@ export const FAMILIES: { name: Family; blurb: string }[] = [
   { name: 'Knots', blurb: 'Thread wrapped around the needle, for dots and raised texture.' },
 ];
 
-export interface Demo { ops: Op[]; th: Thread; slow?: number; fast?: number }
+export interface Demo { ops: Op[]; th: Thread; fast?: number }
 export interface Stitch {
   slug: string;
   name: string;
@@ -487,7 +487,7 @@ export const STITCHES: Stitch[] = [
       const o: Op[] = [];
       whipped(o, wave(-28, 28, 0, 5), 6.5, 2.6, T(C.ochre, 2), 2.4);
       const i = o.findIndex((x) => x.k === 'up' && x.th);
-      return { ops: caps(o, { 0: 0, [i]: 1, [i + 1]: 2, [i + 2]: 3 }), th: T(C.teal), slow: 4, fast: 0.45 };
+      return { ops: caps(o, { 0: 0, [i]: 1, [i + 1]: 2, [i + 2]: 3 }), th: T(C.teal), fast: 0.45 };
     },
   },
   {
@@ -506,7 +506,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       couch(o, curve([v(-30, 10), v(-14, -12), v(4, 10), v(20, -10), v(30, 2)]), T(C.gold, 3.6), T(C.madder, 1.4), 6.5);
-      return { ops: caps(o, { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }), th: T(C.gold, 3.6), slow: 6, fast: 0.5 };
+      return { ops: caps(o, { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }), th: T(C.gold, 3.6), fast: 0.5 };
     },
   },
   {
@@ -544,7 +544,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       for (let k = 0; k < 5; k++) daisy(o, v(0, 2), -Math.PI / 2 + (k * Math.PI * 2) / 5, 2.8, 15);
-      return { ops: caps(o, { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }), th: T(C.rose), slow: 4 };
+      return { ops: caps(o, { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }), th: T(C.rose) };
     },
   },
   {
@@ -565,7 +565,7 @@ export const STITCHES: Stitch[] = [
       fly(o, v(-9, -20), v(9, -20), v(0, -11), v(0, -8));
       fly(o, v(-11, -10), v(11, -10), v(0, 0), v(0, 3));
       fly(o, v(-13, 1), v(13, 1), v(0, 12), v(0, 20));
-      return { ops: caps(o, { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }), th: T(C.sage), slow: 4 };
+      return { ops: caps(o, { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 }), th: T(C.sage) };
     },
   },
   {
@@ -679,7 +679,7 @@ export const STITCHES: Stitch[] = [
       const hw = leaf(10.5, 0.75);
       const sl = 0.09;
       satin(o, (t) => add(P.p(t * P.L), mul(P.n(t * P.L), hw(t))), (t) => sub(P.p((t + sl) * P.L), mul(P.n((t + sl) * P.L), hw(t + sl))), 24, 0.02, 0.97 - sl);
-      return { ops: caps(o, { 0: 0, 1: 1, 2: 2, 4: 3 }), th: T(C.sage), slow: 6, fast: 0.4 };
+      return { ops: caps(o, { 0: 0, 1: 1, 2: 2, 4: 3 }), th: T(C.sage), fast: 0.4 };
     },
   },
   {
@@ -707,7 +707,7 @@ export const STITCHES: Stitch[] = [
       fan(o, c, a0 + 0.02, a1 - 0.02, 17, () => R0 - 17 - r() * 2.5, () => R0 - 6.5 - r() * 2.5, T(C.pink));
       const row3 = o.length;
       fan(o, c, a0 + 0.04, a1 - 0.04, 12, () => R0 - 25 + r() * 1.5, () => R0 - 14 - r() * 2.5, T(C.wine));
-      return { ops: caps(o, { 0: 0, [row2]: 1, [row2 + 1]: 2, [row2 + 6]: 3, [row3]: 4 }), th: T(C.blush), slow: 6, fast: 0.35 };
+      return { ops: caps(o, { 0: 0, [row2]: 1, [row2 + 1]: 2, [row2 + 6]: 3, [row3]: 4 }), th: T(C.blush), fast: 0.35 };
     },
   },
   {
@@ -725,7 +725,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       fishbone(o, curve([v(4, -30), v(-2, -4), v(3, 28)]), leaf(13), 11, 2.2);
-      return { ops: caps(o, { 0: 0, 2: 1, 4: 2, 6: 3 }), th: T(C.moss), slow: 6, fast: 0.45 };
+      return { ops: caps(o, { 0: 0, 2: 1, 4: 2, 6: 3 }), th: T(C.moss), fast: 0.45 };
     },
   },
   {
@@ -742,7 +742,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       seeds(o, v(0, 0), 25, 40, 4, 9, 5.6);
-      return { ops: caps(o, { 0: 0, 2: 1, 6: 2 }), th: T(C.indigo), slow: 6, fast: 0.4 };
+      return { ops: caps(o, { 0: 0, 2: 1, 6: 2 }), th: T(C.indigo), fast: 0.4 };
     },
   },
   {
@@ -778,7 +778,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       [-14, 0, 14].forEach((x) => knot(o, v(x, 0), 2.2));
-      return { ops: caps(o, { 0: 0, 1: [1, 2, 3] }), th: T(C.rust), slow: 2, fast: 0.7 };
+      return { ops: caps(o, { 0: 0, 1: [1, 2, 3] }), th: T(C.rust), fast: 0.7 };
     },
   },
   {
@@ -796,7 +796,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       [-14, 0, 14].forEach((x) => knot(o, v(x, 0), 2.2, 2, 'colonial'));
-      return { ops: caps(o, { 0: 0, 1: [1, 2, 3] }), th: T(C.indigo), slow: 2, fast: 0.7 };
+      return { ops: caps(o, { 0: 0, 1: [1, 2, 3] }), th: T(C.indigo), fast: 0.7 };
     },
   },
   {
@@ -817,7 +817,7 @@ export const STITCHES: Stitch[] = [
       bullion(o, v(5, -7), v(-7, -7), 9);
       bullion(o, v(6, 0), v(-7, 0), 10);
       bullion(o, v(5, 7), v(-7, 7), 9);
-      return { ops: caps(o, { 0: 0, 1: [1, 2, 3, 4] }), th: T(C.rose), slow: 2, fast: 0.65 };
+      return { ops: caps(o, { 0: 0, 1: [1, 2, 3, 4] }), th: T(C.rose), fast: 0.65 };
     },
   },
   {
@@ -835,7 +835,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       for (let k = 0; k < 5; k++) pistil(o, v(0, 16), -Math.PI / 2 + (k - 2) * 0.42, 2, 24);
-      return { ops: caps(o, { 0: 0, 1: [1, 2, 3] }), th: T(C.plum), slow: 2, fast: 0.7 };
+      return { ops: caps(o, { 0: 0, 1: [1, 2, 3] }), th: T(C.plum), fast: 0.7 };
     },
   },
   {
@@ -853,7 +853,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       [-16, 0, 16].forEach((x) => fourLegged(o, v(x, 0), 6));
-      return { ops: caps(o, { 0: 0, 2: 1, 3: [2, 3] }), th: T(C.teal), slow: 5, fast: 0.6 };
+      return { ops: caps(o, { 0: 0, 2: 1, 3: [2, 3] }), th: T(C.teal), fast: 0.6 };
     },
   },
   {
@@ -871,7 +871,7 @@ export const STITCHES: Stitch[] = [
     demo: () => {
       const o: Op[] = [];
       coral(o, wave(-28, 28, 0, 7), 7.5);
-      return { ops: caps(o, { 0: 0, 1: [1, 2, 3] }), th: T(C.madder), slow: 3, fast: 0.6 };
+      return { ops: caps(o, { 0: 0, 1: [1, 2, 3] }), th: T(C.madder), fast: 0.6 };
     },
   },
 ];

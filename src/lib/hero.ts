@@ -192,8 +192,8 @@ class Hero {
     /** Every band starts together and takes this long, so the whole sampler fills in one pass. */
     const D = 5;
     for (const mo of this.motifs) {
-      const d0 = compile(mo.ops, { th: mo.th, slow: 0, fast: 0.1 }).dur;
-      mo.prog = compile(mo.ops, { th: mo.th, slow: 0, fast: (0.1 * D) / d0 });
+      const d0 = compile(mo.ops, { th: mo.th, fast: 0.1 }).dur;
+      mo.prog = compile(mo.ops, { th: mo.th, fast: (0.1 * D) / d0 });
       mo.t0 = 0;
       mo.pts = mo.prog.holes.map((h) => h.p);
       this.dur = Math.max(this.dur, mo.t0 + mo.prog.dur);
