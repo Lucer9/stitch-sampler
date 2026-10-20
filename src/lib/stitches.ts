@@ -113,10 +113,10 @@ export function chain(o: Op[], path: V[], len: number, wf = 0.3) {
   o.push(down(add(pts[n], mul(P.d(P.L), 1.1))));
 }
 
-export function daisy(o: Op[], c: V, ang: number, r0: number, len: number, wf = 0.34) {
+export function daisy(o: Op[], c: V, ang: number, r0: number, len: number, wf = 0.34, tack = 1.3) {
   const a = add(c, polar(r0, ang));
   const tip = add(c, polar(r0 + len, ang));
-  o.push(up(a), down(a, { loop: 'round', wf }), up(tip, { catch: true }), down(add(tip, polar(1.3, ang))));
+  o.push(up(a), down(a, { loop: 'round', wf }), up(tip, { catch: true }), down(add(tip, polar(tack, ang))));
 }
 
 export function fly(o: Op[], a: V, b: V, c: V, tack: V) {
