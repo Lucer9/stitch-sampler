@@ -24,7 +24,7 @@ const { items } = Astro.props;
   ))}
 </ol>
 
-<style>
+<style is:global>
   .steps {
     list-style: none;
     margin: 0;
@@ -54,7 +54,7 @@ const { items } = Astro.props;
     color: var(--ink);
     box-shadow: var(--shadow);
   }
-  .k {
+  .steps .k {
     flex: none;
     display: grid;
     place-items: center;
@@ -66,23 +66,23 @@ const { items } = Astro.props;
     color: var(--ink-3);
     transition: all 0.2s ease;
   }
-  [data-on] .k {
+  .steps [data-on] .k {
     border-color: var(--accent);
     background: var(--accent);
     color: var(--accent-ink);
   }
-  .txt {
+  .steps .txt {
     display: grid;
     gap: 4px;
   }
-  .tag {
+  .steps .tag {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font: 600 13px/1.2 var(--sans);
     color: var(--ink);
   }
-  .dot {
+  .steps .dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;

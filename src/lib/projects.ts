@@ -37,11 +37,11 @@ export interface Project {
 
 const W = 1.3;
 const deg = (d: number) => (d * Math.PI) / 180;
-const ring = (c: V, r: number, n = 28) => Array.from({ length: n + 1 }, (_, k) => add(c, polar(r, (k / n) * Math.PI * 2)));
-const closed = (poly: V[]) => [...poly, poly[0]];
-const leafW = (max: number) => (t: number) => max * Math.sin(Math.PI * Math.min(1, Math.max(0, t))) ** 0.8;
+export const ring = (c: V, r: number, n = 28) => Array.from({ length: n + 1 }, (_, k) => add(c, polar(r, (k / n) * Math.PI * 2)));
+export const closed = (poly: V[]) => [...poly, poly[0]];
+export const leafW = (max: number) => (t: number) => max * Math.sin(Math.PI * Math.min(1, Math.max(0, t))) ** 0.8;
 /** The outline of a leaf drawn along `axis` with half-width `hw`. */
-const leafLine = (axis: V[], hw: (t: number) => number) => {
+export const leafLine = (axis: V[], hw: (t: number) => number) => {
   const A = track(axis);
   const edge = (k: number) => Array.from({ length: 17 }, (_, j) => add(A.p((j / 16) * A.L), mul(A.n((j / 16) * A.L), k * hw(j / 16))));
   return closed([...edge(1), ...edge(-1).reverse()]);

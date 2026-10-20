@@ -44,6 +44,7 @@ const full = title === 'Sampler' ? 'Sampler — an animated field guide to embro
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 8 10 12.5 14.5 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <a href="/#projects">Projects</a>
+          <a href="/make/">Make your own</a>
           <a href="/#kit">What you need</a>
         </nav>
       </div>
@@ -317,8 +318,13 @@ const full = title === 'Sampler' ? 'Sampler — an animated field guide to embro
       height: 36px;
     }
   }
-  @media (max-width: 560px) {
+  @media (max-width: 760px) {
     nav a:last-child {
+      display: none;
+    }
+  }
+  @media (max-width: 480px) {
+    nav a[href='/#projects'] {
       display: none;
     }
   }

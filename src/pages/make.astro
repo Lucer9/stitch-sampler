@@ -1,0 +1,381 @@
+---
+import Base from '../layouts/Base.astro';
+import Player from '../components/Player.astro';
+import Steps from '../components/Steps.astro';
+
+const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cactus in a terracotta pot', 'A sleeping cat', 'A bee over lavender', 'A crescent moon with stars'];
+---
+<Base title="Make your own" description="Describe a shape or upload a photo. Claude sketches a simple embroidery design, picks the stitches for each part, and turns it into a guided project.">
+  <section class="wrap ask" aria-labelledby="make-h">
+    <p class="eyebrow">Design with AI</p>
+    <h1 id="make-h">Make your own pattern</h1>
+    <p class="lede">Describe something, or add a photo. Claude sketches a simple design, picks the stitch that suits each part, and turns it into a guided project you can follow here.</p>
+    <form class="box">
+      <label class="sr" for="prompt">What would you like to stitch?</label>
+      <textarea id="prompt" name="prompt" rows="3" maxlength="600" placeholder="A snail on a mushroom, with grass underneath"></textarea>
+      <div class="ideas" role="group" aria-label="Ideas">
+        {ideas.map((t) => <button type="button" data-idea={t}>{t}</button>)}
+      </div>
+      <div class="row">
+        <label class="photo">
+          <input type="file" accept="image/png,image/jpeg,image/webp" />
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.6-2h6.8l1.6 2h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+          <span>Add a photo</span>
+        </label>
+        <span class="thumb" hidden><button type="button" class="drop" aria-label="Remove photo">×</button></span>
+        <button type="submit" class="btn go">
+          Design it
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <p class="status" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <article class="wrap lesson made" data-player data-project="" hidden>
+    <div class="body">
+      <header class="head">
+        <h2 class="title"></h2>
+        <p class="use blurb"></p>
+        <p class="note" hidden></p>
+      </header>
+      <Player name="Your design" steps={['']} practice={false} />
+      <aside class="guide">
+        <h3 class="eyebrow">Step by step</h3>
+        <div class="list"><Steps items={[]} /></div>
+        <p class="pen">The blue lines are the pattern, drawn on in water-soluble pen. A damp cloth lifts them when you finish.</p>
+      </aside>
+    </div>
+    <section class="good" aria-labelledby="why-h">
+      <h2 id="why-h">Why these stitches</h2>
+      <ul class="why"></ul>
+    </section>
+  </article>
+</Base>
+
+<script>
+  import { fromAI, type AIDesign } from '../lib/design.ts';
+  import { lesson } from '../lib/projects.ts';
+  import { playLesson } from '../lib/player.ts';
+
+  const form = document.querySelector<HTMLFormElement>('.box')!;
+  const prompt = form.querySelector<HTMLTextAreaElement>('#prompt')!;
+  const file = form.querySelector<HTMLInputElement>('input[type=file]')!;
+  const thumb = form.querySelector<HTMLElement>('.thumb')!;
+  const status = form.querySelector<HTMLElement>('.status')!;
+  const go = form.querySelector<HTMLButtonElement>('.go')!;
+  const out = document.querySelector<HTMLElement>('.made')!;
+  let photo: { type: string; data: string } | null = null;
+  let player: { stop: () => void } | null = null;
+
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+  form.querySelectorAll<HTMLButtonElement>('[data-idea]').forEach((b) => b.addEventListener('click', () => {
+    prompt.value = b.dataset.idea!;
+    prompt.focus();
+  }));
+
+  /** Shrinks a photo to fit 1024 px so the upload stays small, as JPEG. */
+  async function shrink(f: File) {
+    const img = await createImageBitmap(f);
+    const k = Math.min(1, 1024 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * k);
+    c.height = Math.round(img.height * k);
+    c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+    const url = c.toDataURL('image/jpeg', 0.85);
+    return { url, type: 'image/jpeg', data: url.slice(url.indexOf(',') + 1) };
+  }
+
+  file.addEventListener('change', async () => {
+    const f = file.files?.[0];
+    if (!f) return;
+    const s = await shrink(f);
+    photo = { type: s.type, data: s.data };
+    const img = thumb.querySelector('img') ?? thumb.insertBefore(document.createElement('img'), thumb.firstChild);
+    img.alt = 'Your photo';
+    img.src = s.url;
+    thumb.hidden = false;
+  });
+  thumb.querySelector('.drop')!.addEventListener('click', () => {
+    photo = null;
+    file.value = '';
+    thumb.hidden = true;
+  });
+
+  const waits = ['Sketching the pattern…', 'Choosing a stitch for each part…', 'Tracing it onto the linen…'];
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!prompt.value.trim() && !photo) {
+      status.textContent = 'Describe a shape or add a photo first.';
+      return;
+    }
+    go.disabled = true;
+    form.dataset.busy = '';
+    let k = 0;
+    status.textContent = waits[0];
+    const tick = setInterval(() => (status.textContent = waits[++k % waits.length]), 6000);
+    try {
+      const res = await fetch('/api/design', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt.value, image: photo ?? undefined }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { design?: AIDesign; error?: string };
+      if (!res.ok || !body.design) throw new Error(body.error ?? 'Something went wrong. Try again.');
+      show(body.design);
+      status.textContent = '';
+    } catch (err) {
+      status.textContent = err instanceof Error ? err.message : 'Something went wrong. Try again.';
+    } finally {
+      clearInterval(tick);
+      go.disabled = false;
+      delete form.dataset.busy;
+    }
+  });
+
+  function show(d: AIDesign) {
+    const { project, why } = fromAI(d);
+    const l = lesson(project);
+    out.querySelector('.title')!.textContent = project.name;
+    out.querySelector('.blurb')!.textContent = project.blurb;
+    const note = out.querySelector<HTMLElement>('.note')!;
+    note.textContent = d.note ?? '';
+    note.hidden = !d.note;
+    out.querySelector('.list')!.innerHTML = `<ol class="steps">${project.parts.map((p, k) => `
+      <li><button type="button" data-step="${k}"${k === 0 ? ' data-on' : ''}>
+        <span class="k">${k + 1}</span>
+        <span class="txt"><span class="tag"><span class="dot" style="background:${p.floss[1]}"></span>${esc(why[k].name)}</span><span>${esc(p.step)}</span></span>
+      </button></li>`).join('')}</ol>`;
+    out.querySelector('.why')!.innerHTML = why.map((w) => `
+      <li><span class="dot" style="background:${w.color}"></span><a href="/stitches/${w.stitch}/">${esc(w.name)}</a><p>${esc(w.why)}</p></li>`).join('');
+    out.querySelector('canvas.hoop')!.setAttribute('aria-label', `${project.name} being stitched on linen in an embroidery hoop. ${l.steps.join(' ')}`);
+    out.querySelector('.now-n')!.textContent = `Step 1 of ${l.steps.length}`;
+    out.querySelector('.now-t')!.textContent = l.steps[0];
+    out.hidden = false;
+    player?.stop();
+    player = playLesson(out, l);
+    out.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }
+</script>
+
+<style>
+  .ask {
+    display: grid;
+    gap: 16px;
+    max-width: 860px;
+    margin-top: clamp(8px, 3vw, 32px);
+  }
+  h1 {
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    line-height: 1;
+  }
+  .lede {
+    font-size: clamp(17px, 1.6vw, 20px);
+    color: var(--ink-2);
+    max-width: 52ch;
+  }
+  .box {
+    display: grid;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 18px;
+    border-radius: 22px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: 14px 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 18px/1.45 var(--sans);
+    resize: vertical;
+  }
+  textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .ideas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ideas button {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1.5px dashed var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font: 500 14px/1 var(--sans);
+    cursor: pointer;
+  }
+  .ideas button:hover {
+    border-color: var(--ink-3);
+    color: var(--ink);
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px 0 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    font: 600 14px/1 var(--sans);
+    cursor: pointer;
+  }
+  .photo:hover {
+    border-color: var(--ink-3);
+  }
+  .photo:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .photo input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .photo svg {
+    width: 20px;
+    height: 20px;
+  }
+  .thumb {
+    position: relative;
+    display: inline-block;
+  }
+  .thumb[hidden] {
+    display: none;
+  }
+  .thumb :global(img) {
+    display: block;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+  .drop {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    font: 600 14px/1 var(--sans);
+    cursor: pointer;
+  }
+  .go {
+    margin-left: auto;
+  }
+  .go:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+  .status {
+    min-height: 1.4em;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  [data-busy] .status::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    50% {
+      opacity: 0.25;
+    }
+  }
+  .made {
+    margin-top: clamp(48px, 8vw, 96px);
+    scroll-margin-top: 16px;
+  }
+  .made[hidden] {
+    display: none;
+  }
+  .title {
+    font-size: clamp(2.2rem, 4.6vw, 3.6rem);
+  }
+  .note {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--paper-2);
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  .pen {
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px dashed rgba(48, 92, 168, 0.45);
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  .why {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .why :global(li) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 18px;
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .why :global(.dot) {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(40, 25, 10, 0.25);
+  }
+  .why :global(a) {
+    font: 600 17px/1.2 var(--serif);
+    color: var(--ink);
+    text-decoration-color: var(--accent);
+    text-underline-offset: 3px;
+  }
+  .why :global(p) {
+    grid-column: 1 / -1;
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  @media (max-width: 900px) {
+    .why {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 560px) {
+    .go {
+      width: 100%;
+      justify-content: center;
+      margin-left: 0;
+    }
+  }
+</style>

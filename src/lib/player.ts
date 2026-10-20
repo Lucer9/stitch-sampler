@@ -11,8 +11,13 @@ const NEAR = 2.4;
 
 export function mountPlayer() {
   const root = document.querySelector<HTMLElement>('[data-player]');
-  if (!root) return;
-  new Player(root, root.dataset.project ? lesson(projectBySlug(root.dataset.project)) : bySlug(root.dataset.slug!));
+  if (!root || root.dataset.project === '') return;
+  playLesson(root, root.dataset.project ? lesson(projectBySlug(root.dataset.project)) : bySlug(root.dataset.slug!));
+}
+
+/** Teaches `s` in the player markup under `root`; `stop()` releases it so another lesson can take its place. */
+export function playLesson(root: HTMLElement, s: Lesson): { stop: () => void } {
+  return new Player(root, s);
 }
 
 class Player {
@@ -35,6 +40,8 @@ class Player {
   private practice: { k: number; misses: number; first: number; picks: V[]; gap: number; bad: number; hot: number } | null = null;
   private reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   private $ = <T extends Element>(sel: string) => this.root.querySelector<T>(sel)!;
+  private abort = new AbortController();
+  private observers: { disconnect: () => void }[] = [];
 
   constructor(root: HTMLElement, s: Lesson) {
     this.root = root;
@@ -44,18 +51,29 @@ class Player {
     this.scene = new Scene(this.$<HTMLCanvasElement>('canvas.hoop'), { mode: 'hoop', R: s.R ?? 38, pitch: 0.85 });
     this.t = this.reduce ? this.prog.dur : 0;
     this.bind();
-    new ResizeObserver(() => {
+    const ro = new ResizeObserver(() => {
       if (this.scene.resize()) this.side?.resize();
       this.placeDots();
       this.draw();
-    }).observe(this.scene.el);
-    new IntersectionObserver(([e]) => {
+    });
+    ro.observe(this.scene.el);
+    const io = new IntersectionObserver(([e]) => {
       this.visible = e.isIntersecting;
       if (this.visible && !this.touched && !this.reduce && !this.practice) this.play();
       this.tick();
-    }, { threshold: 0.35 }).observe(this.scene.el);
-    document.addEventListener('visibilitychange', () => this.tick());
+    }, { threshold: 0.35 });
+    io.observe(this.scene.el);
+    this.observers.push(ro, io);
+    document.addEventListener('visibilitychange', () => this.tick(), { signal: this.abort.signal });
     this.draw();
+  }
+
+  stop() {
+    this.abort.abort();
+    this.observers.forEach((o) => o.disconnect());
+    cancelAnimationFrame(this.raf);
+    this.raf = 0;
+    this.visible = false;
   }
 
   private bind() {
@@ -73,7 +91,7 @@ class Player {
         case 'side': return this.toggleSide();
         case 'practice': return this.togglePractice();
       }
-    });
+    }, { signal: this.abort.signal });
     document.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) =>
       b.addEventListener('click', () => {
         const e = this.prog.evs.findIndex((ev) => (Array.isArray(ev.cap) ? ev.cap.includes(+b.dataset.step!) : ev.cap === +b.dataset.step!));
@@ -82,14 +100,14 @@ class Player {
         this.seek(this.prog.evs[e].t0);
         this.play();
         this.scene.el.scrollIntoView({ block: 'nearest', behavior: this.reduce ? 'auto' : 'smooth' });
-      }),
+      }, { signal: this.abort.signal }),
     );
     const scrub = this.$<HTMLInputElement>('.scrub');
     scrub.addEventListener('input', () => {
       this.engage();
       this.pause();
       this.seek((+scrub.value / 1000) * this.prog.dur);
-    });
+    }, { signal: this.abort.signal });
     document.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target as HTMLElement).tagName;
@@ -100,7 +118,7 @@ class Player {
       else if (k === 'arrowleft') { e.preventDefault(); this.step(-1); }
       else if (k === 'f') this.flip();
       else if (k === 's' && this.s.knot) this.toggleSide();
-    });
+    }, { signal: this.abort.signal });
   }
 
   /** The viewer took control: stop auto-replaying and start announcing steps. */
@@ -162,7 +180,7 @@ class Player {
   }
 
   private tick() {
-    const run = this.visible && !document.hidden;
+    const run = this.visible && !document.hidden && !this.abort.signal.aborted;
     if (run && !this.raf) {
       this.last = performance.now();
       this.raf = requestAnimationFrame(this.loop);
@@ -173,6 +191,7 @@ class Player {
   }
 
   private loop = (now: number) => {
+    if (this.abort.signal.aborted) return;
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     if (this.playing) {
