@@ -35,5 +35,7 @@ assert.throws(() => fromAI({ name: '', blurb: '', note: '', level: 1, parts: [] 
 const sample = fromAI(SAMPLE);
 assert.equal(sample.project.parts.length, SAMPLE.parts.length, 'every part of the worked example is stitchable');
 assert.deepEqual(sample.why.map((w) => w.stitch).slice(0, 2), ['stem-stitch', 'fishbone-stitch'], 'layer 1 is stitched first');
-assert.equal(sample.why[sample.why.length - 1].stitch, 'four-legged-knot', 'layer 4 last');
+assert.equal(sample.why[sample.why.length - 1].stitch, 'stem-stitch', 'the outline goes on last');
+const rev = fromAI({ ...SAMPLE, parts: [...SAMPLE.parts].reverse() });
+assert.deepEqual(rev.why.map((w) => w.stitch), ['stem-stitch', 'long-and-short-stitch', 'fishbone-stitch', 'stem-stitch', 'satin-stitch'], 'parts sort by layer, then by list order');
 console.log('ok design translator');

@@ -231,19 +231,16 @@ export const SAMPLE: AIDesign = (() => {
   const body = lemon(v(3, 5), 12.5, 8.5, 25);
   const shine = lemon(v(-0.5, 0.6), 5, 1.6, 25, 14);
   return {
-    name: 'Lemon branch',
-    blurb: 'A ripe lemon on a leafy twig, with a blossom and a few sparkles.',
+    name: 'Lemon',
+    blurb: 'A ripe lemon on a short twig with one leaf.',
     note: '',
     level: 2,
     parts: [
-      { stitch: 'stem-stitch', layer: 1, color: '#6f5a3c', colorName: 'Twig brown', step: 'Stem stitch the twig down to the top tip of the lemon.', why: 'A twisted, rope-like line reads as bark.', paths: [[[-24, -15], [-17, -11.5], [-12.5, -6], [-10.5, -1.8]]] },
-      { stitch: 'fishbone-stitch', layer: 2, color: '#55733a', colorName: 'Leaf green', step: 'Fishbone stitch two leaves off the twig, each stitch crossing just past the centre.', why: 'It fills a leaf and draws its centre vein in one go.', leaves: [{ base: [-17, -11.5], tip: [-22, -23], width: 6.5 }, { base: [-13.2, -7.5], tip: [-4, -15.5], width: 6 }] },
+      { stitch: 'stem-stitch', layer: 1, color: '#6f5a3c', colorName: 'Twig brown', step: 'Stem stitch the twig down to the top tip of the lemon.', why: 'A twisted, rope-like line reads as bark.', paths: [[[-20, -13], [-15, -9], [-12, -5], [-10.5, -1.8]]] },
+      { stitch: 'fishbone-stitch', layer: 2, color: '#55733a', colorName: 'Leaf green', step: 'Fishbone stitch the leaf off the twig, each stitch crossing just past the centre.', why: 'It fills a leaf and draws its centre vein in one go.', leaves: [{ base: [-14, -8], tip: [-3, -17], width: 7 }] },
       { stitch: 'long-and-short-stitch', layer: 2, color: '#f3d462', colorName: 'Lemon', color2: '#d9a830', step: 'Long and short across the lemon: pale lemon from the top edge, deeper lemon underneath.', why: 'Two shades blend so the fruit looks round, and the area is too big for satin.', shapes: [body], angle: 65 },
       { stitch: 'satin-stitch', layer: 3, color: '#fbf0bd', colorName: 'Butter', step: 'A small satin highlight on the upper left, where the light hits.', why: 'A pale glossy patch makes the skin shine.', shapes: [shine], angles: [65] },
       { stitch: 'stem-stitch', layer: 3, color: '#b98a2c', colorName: 'Ochre', step: 'Outline the lemon in stem stitch, on top of the fill.', why: 'A darker outline crisps the edge of the fill.', paths: [[...body, body[0]]] },
-      { stitch: 'lazy-daisy', layer: 2, color: '#f8f4ea', colorName: 'White', step: 'A five-petal lazy daisy blossom by the twig.', why: 'One stitch per petal makes a quick, plump flower.', flowers: [{ center: [-23, 3], petals: 5, length: 3.4 }] },
-      { stitch: 'french-knot', layer: 4, color: '#e2b23c', colorName: 'Gold', step: 'A French knot in the middle of the blossom.', why: 'A raised dot for the flower centre.', points: [[-23, 3]] },
-      { stitch: 'four-legged-knot', layer: 4, color: '#c79a35', colorName: 'Antique gold', step: 'Scatter three four-legged knots as sparkles.', why: 'A cross with a knot on top reads as a little star.', points: [[14, -14], [20, -7], [-14, 15]], size: 1.4 },
     ],
   };
 })();
