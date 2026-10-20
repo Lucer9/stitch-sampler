@@ -143,7 +143,7 @@ const ideas = ['A snail on a mushroom', 'A lemon branch with two leaves', 'A cac
       const res = await fetch('/api/design', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.value, image: photo ?? undefined }),
+        body: JSON.stringify({ prompt: prompt.value, image: photo ?? undefined, effort: new URLSearchParams(location.search).get('effort') ?? undefined }),
       });
       const body = (await res.json().catch(() => ({}))) as { design?: AIDesign; error?: string };
       if (!res.ok || !body.design) throw new Error(body.error ?? 'Something went wrong. Try again.');

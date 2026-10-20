@@ -11,7 +11,8 @@ needle moves: the needle comes up, goes down, wraps, weaves. Nothing on the page
 - **Guided projects** (`/projects/<slug>/`): a design traced on the linen in water-soluble-pen blue, then stitched
   one part (one stitch, one floss) at a time.
 - **Make your own** (`/make/`): describe a shape or upload a photo; Claude returns a design in the same parts format
-  and the page plays it as a guided project, with why each stitch was picked.
+  and the page plays it as a guided project, with why each stitch was picked. Designs run at high effort (about
+  45–60 s); `/make/?effort=medium` asks for a medium-effort one (about 12 s) to compare.
 
 Stack: Astro 7 (static output), plain TypeScript, Canvas 2D, two self-hosted fonts (Fraunces, Instrument Sans). A
 Cloudflare Worker (`worker.ts`) serves `dist/` and the one API route, `/api/design`, which calls Claude Sonnet 5.5
