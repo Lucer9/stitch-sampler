@@ -126,9 +126,9 @@ export class Scene {
     this.W = this.el.width = W;
     this.H = this.el.height = H;
     if (this.o.mode === 'hoop') {
-      this.s = Math.min(W, H) / (this.o.R * 2.56);
+      this.s = Math.min(W, H) / (this.o.R * 2.6);
       this.cx = W / 2;
-      this.cy = H / 2 + this.o.R * 0.07 * this.s;
+      this.cy = H / 2 - this.o.R * 0.04 * this.s;
     } else {
       const vw = this.o.view!;
       this.s = Math.max(W / vw.w, H / vw.h);
