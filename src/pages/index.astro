@@ -106,11 +106,7 @@ const kit = [
 
 <script>
   import { mountHero } from '../lib/hero.ts';
-  import { mountSwatches } from '../lib/swatch.ts';
-  document.fonts.ready.then(() => {
-    mountHero();
-    mountSwatches();
-  });
+  document.fonts.ready.then(() => mountHero());
 </script>
 
 <style>

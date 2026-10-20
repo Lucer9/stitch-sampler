@@ -2,7 +2,7 @@ import { compile, frameAt } from './engine.ts';
 import { Scene } from './render.ts';
 import { bySlug } from './stitches.ts';
 
-/** Renders every `canvas[data-swatch]` once it nears the viewport; hovering its link replays the stitch. */
+/** Renders every `canvas[data-swatch]` once it nears the viewport; hovering its link replays the stitch. `data-zoom` crops in on the middle. */
 export function mountSwatches() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const io = new IntersectionObserver(
@@ -22,7 +22,7 @@ function swatch(el: HTMLCanvasElement, reduce: boolean) {
   const d = bySlug(el.dataset.swatch!).demo();
   const prog = compile(d.ops, d);
   const b = prog.box;
-  const size = Math.max(b.x1 - b.x0, b.y1 - b.y0) * 1.22 + 6;
+  const size = (Math.max(b.x1 - b.x0, b.y1 - b.y0) * 1.22 + 6) / +(el.dataset.zoom ?? 1);
   const scene = new Scene(el, { mode: 'swatch', view: { x: (b.x0 + b.x1) / 2 - size / 2, y: (b.y0 + b.y1) / 2 - size / 2, w: size, h: size }, pitch: 1.05 });
   const end = prog.dur + 1;
   const draw = (t: number) => {
