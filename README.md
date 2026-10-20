@@ -28,8 +28,8 @@ npm run build                                # static site in dist/
 npm test                                     # engine and design-translator self-checks (node, no browser)
 ```
 
-The design helper needs a Claude key in `.dev.vars` (git-ignored): `ANTHROPIC_API_KEY=sk-ant-...`, the same key the
-fundamento and manejasinbroncas Workers use; restart `npm run serve` after changing it. Without it `/api/design`
+The design helper needs a Claude key in `.dev.vars` (git-ignored): `ANTHROPIC_API_KEY=sk-ant-...`; restart
+`npm run serve` after changing it. Without it `/api/design`
 answers 503 and the rest of the site works.
 
 ## How it works
