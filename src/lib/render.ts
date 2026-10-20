@@ -681,12 +681,14 @@ export function needle(g: CanvasRenderingContext2D, n: Needle, s: number, L: V, 
   if (len < 0.05) return;
   const d = norm(n.d);
   const nn = perp(d);
-  const hw = n.w * 0.36;
+  const hw = n.w * 0.3;
   const sharp = n.cut !== 'tip';
   const eyed = n.cut !== 'eye';
   const taper = Math.min(len * 0.9, n.len * 0.2 * n.flat);
   const tip = n.tip;
-  const end = sub(tip, mul(d, len));
+  /** The engine ties the thread to `tip - d * len`; the needle runs on past it so that point is the middle of the eye. */
+  const past = eyed ? hw * 1.1 + n.len * 0.035 * n.flat : 0;
+  const end = sub(tip, mul(d, len + past));
   const body = sub(tip, mul(d, sharp ? taper : 0));
   const shape = new Path2D();
   if (sharp) shape.moveTo(tip.x, tip.y);

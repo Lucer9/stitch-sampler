@@ -1,4 +1,4 @@
-import { compile, frameAt, type Op, type Program, type Thread } from './engine.ts';
+import { compile, frameAt, type Frame, type Op, type Program, type Thread } from './engine.ts';
 import { Scene } from './render.ts';
 import {
   T, track, curve, running, back, split, stem, whipped, couch, chain, daisy, fly, feather, blanket, cretan,
@@ -19,6 +19,9 @@ const P = {
 };
 const U = (p: V, th?: Thread): Op => ({ k: 'up', p, ...(th ? { th } : {}) });
 const D = (p: V): Op => ({ k: 'down', p });
+
+/** The sampler stitches itself: no needle, and nothing of what happens behind the cloth. */
+const bare = (f: Frame): Frame => ({ ...f, needle: null, pieces: f.pieces.filter((p) => p.side === 'front') });
 
 interface Motif { slug: string; ops: Op[]; th: Thread; prog?: Program; t0?: number; pts?: V[] }
 /** A row of the sampler: its height, and what to stitch along centre line `y` between `x0` and `x1`. */
@@ -186,14 +189,12 @@ class Hero {
     this.scene = new Scene(el, { mode: 'hoop', R: 50, pitch: 1.05 });
     this.tip = el.parentElement!.querySelector<HTMLElement>('.tip')!;
     this.motifs = compose();
-    const tracks = Array.from({ length: 8 }, (_, k) => k * 0.12);
-    const MAX = 4;
+    /** Every band starts together and takes this long, so the whole sampler fills in one pass. */
+    const D = 5;
     for (const mo of this.motifs) {
-      mo.prog = compile(mo.ops, { th: mo.th, slow: 0, fast: 0.1 });
-      if (mo.prog.dur > MAX) mo.prog = compile(mo.ops, { th: mo.th, slow: 0, fast: (0.1 * MAX) / mo.prog.dur });
-      const k = tracks.indexOf(Math.min(...tracks));
-      mo.t0 = tracks[k];
-      tracks[k] += mo.prog.dur * 0.85;
+      const d0 = compile(mo.ops, { th: mo.th, slow: 0, fast: 0.1 }).dur;
+      mo.prog = compile(mo.ops, { th: mo.th, slow: 0, fast: (0.1 * D) / d0 });
+      mo.t0 = 0;
       mo.pts = mo.prog.holes.map((h) => h.p);
       this.dur = Math.max(this.dur, mo.t0 + mo.prog.dur);
     }
@@ -251,7 +252,7 @@ class Hero {
         }
         continue;
       }
-      live.push(frameAt(mo.prog!, lt));
+      live.push(bare(frameAt(mo.prog!, lt)));
     }
     this.scene.draw(live, {
       side: 'front',
@@ -269,7 +270,7 @@ class Hero {
       spot.height = H;
     }
     spot.getContext('2d')!.clearRect(0, 0, W, H);
-    const frames = this.lit.filter((mo) => this.t >= mo.t0!).map((mo) => frameAt(mo.prog!, Math.min(this.t - mo.t0!, mo.prog!.dur + 1)));
+    const frames = this.lit.filter((mo) => this.t >= mo.t0!).map((mo) => bare(frameAt(mo.prog!, Math.min(this.t - mo.t0!, mo.prog!.dur + 1))));
     this.scene.bake(frames, spot);
     g.save();
     g.globalAlpha = this.fade * 0.7;
