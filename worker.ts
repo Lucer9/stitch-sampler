@@ -91,9 +91,8 @@ async function design(req: Request, env: Env) {
   if (!env.ANTHROPIC_API_KEY) return json({ error: 'The design helper is not set up here.' }, 503);
   const ip = req.headers.get('cf-connecting-ip') ?? 'local';
   if (!(await env.DESIGN_LIMITER.limit({ key: ip })).success) return json({ error: 'Too many designs at once. Try again in a minute.' }, 429);
-  const body = (await req.json().catch(() => null)) as { prompt?: unknown; effort?: unknown; image?: { type?: unknown; data?: unknown } } | null;
+  const body = (await req.json().catch(() => null)) as { prompt?: unknown; image?: { type?: unknown; data?: unknown } } | null;
   const prompt = typeof body?.prompt === 'string' ? body.prompt.trim().slice(0, 600) : '';
-  const effort = body?.effort === 'medium' ? 'medium' : 'high';
   const image = body?.image;
   const kind = typeof image?.type === 'string' && ['image/jpeg', 'image/png', 'image/webp'].includes(image.type) ? (image.type as 'image/jpeg' | 'image/png' | 'image/webp') : null;
   const data = kind && typeof image?.data === 'string' && image.data.length < 2_000_000 ? image.data : null;
@@ -112,7 +111,7 @@ async function design(req: Request, env: Env) {
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
         system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-        output_config: { effort, format: { type: 'json_schema', schema: SCHEMA } },
+        output_config: { effort: 'medium', format: { type: 'json_schema', schema: SCHEMA } },
         messages: [{ role: 'user', content }],
       } as Anthropic.Beta.MessageCreateParamsStreaming)
       .finalMessage();
