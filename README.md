@@ -27,8 +27,8 @@ npm run build                                # static site in dist/
 npm test                                     # engine and design-translator self-checks (node, no browser)
 ```
 
-The design helper needs a Claude key in `.dev.vars` (git-ignored). Copy the key, then
-`printf 'ANTHROPIC_API_KEY=%s\n' "$(pbpaste)" > .dev.vars` and restart `npm run serve`. Without it `/api/design`
+The design helper needs a Claude key in `.dev.vars` (git-ignored): `ANTHROPIC_API_KEY=sk-ant-...`, the same key the
+fundamento and manejasinbroncas Workers use; restart `npm run serve` after changing it. Without it `/api/design`
 answers 503 and the rest of the site works.
 
 ## How it works
@@ -43,6 +43,7 @@ answers 503 and the rest of the site works.
 | `src/lib/player.ts` | The stitch-page player, flip, side view and practice mode. |
 | `src/lib/hero.ts` | The home-page wreath: motifs built from the same builders, four needles at once, finished motifs baked to an offscreen layer. |
 | `src/lib/swatch.ts` | Card thumbnails; hovering a card replays its stitch or project. |
+| `src/lib/examples.ts` | A stitched picture for each of a stitch's three uses (`good`), in the same order; shown on the stitch page. |
 | `src/lib/menu.ts` | The header's Stitches menu: opens on hover, previews one repeat of the hovered stitch. |
 | `src/lib/projects.ts` | Guided projects as parts (stitch, floss, step, builder, pattern outline) and `lesson()`, which turns any project into what the player teaches. |
 | `src/lib/design.ts` | `fromAI()`: validates a design from Claude, clamps it into the hoop, and builds the project. |
