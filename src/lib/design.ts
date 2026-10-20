@@ -4,13 +4,15 @@ import {
   satin, satinFill, longShortFill, seeds, fishbone, knot, fourLegged, daisy, pistil, wheel, bullion, inside, bySlug,
 } from './stitches.ts';
 import { type Part, type Project, ring, closed, leafW, leafLine } from './projects.ts';
-import { type V, v, add, sub, mul, norm, perp, dist, lerp } from './geom.ts';
+import { type V, v, add, sub, mul, norm, perp, dist, dot, lerp, polar } from './geom.ts';
 
 type P = number[];
 /** One part of a design as Claude returns it (see SCHEMA in worker.ts). */
 export interface AIPart {
   stitch: string; color: string; colorName: string; color2?: string; step: string; why: string;
-  paths?: P[][]; shapes?: P[][]; angle?: number; size?: number; points?: P[];
+  /** 1 behind (ground, stems), 2 main fills, 3 shading, highlights and outlines, 4 knots and details on top. */
+  layer?: number;
+  paths?: P[][]; shapes?: P[][]; angle?: number; angles?: number[]; size?: number; points?: P[];
   leaves?: { base: P; tip: P; width: number }[];
   flowers?: { center: P; petals: number; length: number }[];
   loops?: { from: P; to: P }[];
@@ -40,6 +42,22 @@ const list = <X>(a: X[] | undefined, max = 16): X[] => (Array.isArray(a) ? a.sli
 /** Points closer than `gap` to an earlier one are dropped, so knots never pile up. */
 const spaced = (ps: V[], gap: number) => ps.filter((p, i) => ps.slice(0, i).every((q) => dist(p, q) >= gap));
 const smooth = (ps: V[]) => (ps.length > 2 ? curve(ps) : ps);
+/** `hex` darkened (k < 1) or lightened (k > 1). */
+const shade = (hex: string, k: number) => {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const f = (x: number) => Math.round(k < 1 ? x * k : x + (255 - x) * (k - 1)).toString(16).padStart(2, '0');
+  return `#${c.map(f).join('')}`;
+};
+/** Line stitches, worked in fewer strands when they outline or detail a fill. */
+const LINES = ['running-stitch', 'back-stitch', 'split-stitch', 'stem-stitch', 'chain-stitch', 'whipped-running-stitch'];
+/** Longest satin stitch before a fill switches to long and short. */
+const SATIN_MAX = 12;
+/** How long satin stitches across `poly` would be at `ang`. */
+const span = (poly: V[], ang: number) => {
+  const u = polar(1, ang);
+  const ds = poly.map((p) => dot(p, u));
+  return Math.max(...ds) - Math.min(...ds);
+};
 
 /** The moves and pattern lines for one part, or null if nothing in it can be stitched. */
 function build(a: AIPart, th: Thread): { make: (o: Op[]) => void; outline?: V[][] } | null {
@@ -47,6 +65,7 @@ function build(a: AIPart, th: Thread): { make: (o: Op[]) => void; outline?: V[][
   const lines = list(a.paths).map((p) => smooth(pts(p, 12))).filter((p) => p.length >= 2);
   const polys = list(a.shapes).map((p) => pts(p)).filter((p) => p.length >= 3);
   const angle = deg(clamp(a.angle, -360, 360, 90));
+  const angleOf = (k: number) => (Array.isArray(a.angles) && typeof a.angles[k] === 'number' ? deg(clamp(a.angles[k], -360, 360, 90)) : angle);
   const each = <X>(xs: X[], f: (o: Op[], x: X) => void, outline?: V[][]) => (xs.length ? { make: (o: Op[]) => xs.forEach((x) => f(o, x)), outline } : null);
   switch (a.stitch) {
     case 'running-stitch': return each(lines, (o, p) => running(o, p, 2.2, 1.4), lines);
@@ -83,7 +102,11 @@ function build(a: AIPart, th: Thread): { make: (o: Op[]) => void; outline?: V[][
       if (!polys.length && !leaves.length) return null;
       return {
         make: (o) => {
-          polys.forEach((poly) => satinFill(o, poly, angle, 0.85));
+          polys.forEach((poly, k) => {
+            const ang = angleOf(k);
+            if (span(poly, ang) > SATIN_MAX) longShortFill(o, poly, ang, 0.85, th, T(shade(th.color, 0.8), W));
+            else satinFill(o, poly, ang, 0.85);
+          });
           leaves.forEach(({ b, t, w }) => {
             const A = track(curve([b!, add(lerp(b!, t!, 0.5), mul(perp(norm(sub(t!, b!))), 0.4)), t!]));
             const hw = leafW(w / 2);
@@ -94,8 +117,10 @@ function build(a: AIPart, th: Thread): { make: (o: Op[]) => void; outline?: V[][
         outline: [...polys.map(closed), ...leaves.map(({ b, t, w }) => leafLine(curve([b!, lerp(b!, t!, 0.5), t!]), leafW(w / 2)))],
       };
     }
-    case 'long-and-short-stitch':
-      return each(polys, (o, poly) => longShortFill(o, poly, angle, 0.85, th, T(c2, W)), polys.map(closed));
+    case 'long-and-short-stitch': {
+      const dark = T(a.color2 ? c2 : shade(th.color, 0.78), W);
+      return polys.length ? { make: (o) => polys.forEach((poly, k) => longShortFill(o, poly, angleOf(k), 0.85, th, dark)), outline: polys.map(closed) } : null;
+    }
     case 'seed-stitch': return each(polys, (o, poly) => {
       const c = mul(poly.reduce((s, q) => add(s, q), v(0, 0)), 1 / poly.length);
       const r = Math.max(...poly.map((q) => dist(q, c)));
@@ -150,11 +175,13 @@ function build(a: AIPart, th: Thread): { make: (o: Op[]) => void; outline?: V[][
   return null;
 }
 
-/** A design from Claude as a guided project, with each kept part's reason. Throws if nothing in it can be stitched. */
+/** A design from Claude as a guided project, parts in layer order, with each kept part's reason. Throws if nothing in it can be stitched. */
 export function fromAI(d: AIDesign): { project: Project; why: { stitch: string; name: string; why: string; color: string }[] } {
   const parts: Part[] = [];
   const why: { stitch: string; name: string; why: string; color: string }[] = [];
-  for (const a of list(d.parts, 9)) {
+  const layer = (a: AIPart) => (typeof a?.layer === 'number' ? clamp(Math.round(a.layer), 1, 4, 2) : 2);
+  const ordered = list(d.parts, 10).map((a, i) => ({ a, i })).sort((x, y) => layer(x.a) - layer(y.a) || x.i - y.i).map((x) => x.a);
+  for (const a of ordered) {
     if (!a || typeof a.stitch !== 'string' || !bySlug(a.stitch)) continue;
     const color = hex(a.color, '#7a5c3e');
     const b = build(a, T(color, W));
@@ -163,6 +190,7 @@ export function fromAI(d: AIDesign): { project: Project; why: { stitch: string; 
     parts.push({
       stitch: a.stitch,
       floss: [name, color],
+      weight: layer(a) >= 3 && LINES.includes(a.stitch) ? 0.7 : 1,
       also: a.color2 && ['whipped-running-stitch', 'couching', 'long-and-short-stitch'].includes(a.stitch) ? [['Second colour', hex(a.color2, '#a8382b')]] : undefined,
       step: typeof a.step === 'string' && a.step ? a.step.slice(0, 220) : `Work the ${bySlug(a.stitch).name.toLowerCase()}.`,
       make: (o) => b.make(o),
@@ -184,3 +212,38 @@ export function fromAI(d: AIDesign): { project: Project; why: { stitch: string; 
     why,
   };
 }
+
+const r1 = (x: number) => Math.round(x * 10) / 10;
+const xy = (p: V): number[] => [r1(p.x), r1(p.y)];
+/** A lemon: an ellipse with pointed ends, `n` points, turned `rot` degrees about `c`. */
+function lemon(c: V, a: number, b: number, rot: number, n = 28): number[][] {
+  return Array.from({ length: n }, (_, k) => {
+    const t = (k / n) * Math.PI * 2;
+    const x = a * Math.cos(t) + 2.4 * Math.sign(Math.cos(t)) * Math.abs(Math.cos(t)) ** 14;
+    const p = v(x, b * Math.sin(t));
+    const r = deg(rot);
+    return xy(add(c, v(p.x * Math.cos(r) - p.y * Math.sin(r), p.x * Math.sin(r) + p.y * Math.cos(r))));
+  });
+}
+
+/** A worked example of a good design, shown to Claude in the system prompt and run by the self-check. */
+export const SAMPLE: AIDesign = (() => {
+  const body = lemon(v(3, 5), 12.5, 8.5, 25);
+  const shine = lemon(v(-0.5, 0.6), 5, 1.6, 25, 14);
+  return {
+    name: 'Lemon branch',
+    blurb: 'A ripe lemon on a leafy twig, with a blossom and a few sparkles.',
+    note: '',
+    level: 2,
+    parts: [
+      { stitch: 'stem-stitch', layer: 1, color: '#6f5a3c', colorName: 'Twig brown', step: 'Stem stitch the twig down to the top tip of the lemon.', why: 'A twisted, rope-like line reads as bark.', paths: [[[-24, -15], [-17, -11.5], [-12.5, -6], [-10.5, -1.8]]] },
+      { stitch: 'fishbone-stitch', layer: 2, color: '#55733a', colorName: 'Leaf green', step: 'Fishbone stitch two leaves off the twig, each stitch crossing just past the centre.', why: 'It fills a leaf and draws its centre vein in one go.', leaves: [{ base: [-17, -11.5], tip: [-22, -23], width: 6.5 }, { base: [-13.2, -7.5], tip: [-4, -15.5], width: 6 }] },
+      { stitch: 'long-and-short-stitch', layer: 2, color: '#f3d462', colorName: 'Lemon', color2: '#d9a830', step: 'Long and short across the lemon: pale lemon from the top edge, deeper lemon underneath.', why: 'Two shades blend so the fruit looks round, and the area is too big for satin.', shapes: [body], angle: 65 },
+      { stitch: 'satin-stitch', layer: 3, color: '#fbf0bd', colorName: 'Butter', step: 'A small satin highlight on the upper left, where the light hits.', why: 'A pale glossy patch makes the skin shine.', shapes: [shine], angles: [65] },
+      { stitch: 'stem-stitch', layer: 3, color: '#b98a2c', colorName: 'Ochre', step: 'Outline the lemon in stem stitch, on top of the fill.', why: 'A darker outline crisps the edge of the fill.', paths: [[...body, body[0]]] },
+      { stitch: 'lazy-daisy', layer: 2, color: '#f8f4ea', colorName: 'White', step: 'A five-petal lazy daisy blossom by the twig.', why: 'One stitch per petal makes a quick, plump flower.', flowers: [{ center: [-23, 3], petals: 5, length: 3.4 }] },
+      { stitch: 'french-knot', layer: 4, color: '#e2b23c', colorName: 'Gold', step: 'A French knot in the middle of the blossom.', why: 'A raised dot for the flower centre.', points: [[-23, 3]] },
+      { stitch: 'four-legged-knot', layer: 4, color: '#c79a35', colorName: 'Antique gold', step: 'Scatter three four-legged knots as sparkles.', why: 'A cross with a knot on top reads as a little star.', points: [[14, -14], [20, -7], [-14, 15]], size: 1.4 },
+    ],
+  };
+})();

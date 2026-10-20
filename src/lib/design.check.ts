@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { fromAI, type AIDesign } from './design.ts';
+import { fromAI, SAMPLE, type AIDesign } from './design.ts';
 import { lesson } from './projects.ts';
 import { compile, frameAt } from './engine.ts';
 
@@ -32,4 +32,8 @@ assert.equal(hostile.project.parts.length, 1, 'unknown stitches are dropped');
 assert.equal(hostile.project.parts[0].floss[1], '#7a5c3e', 'bad colours fall back');
 assert.equal(hostile.project.level, 2, 'bad levels fall back');
 assert.throws(() => fromAI({ name: '', blurb: '', note: '', level: 1, parts: [] }), /could be stitched/);
+const sample = fromAI(SAMPLE);
+assert.equal(sample.project.parts.length, SAMPLE.parts.length, 'every part of the worked example is stitchable');
+assert.deepEqual(sample.why.map((w) => w.stitch).slice(0, 2), ['stem-stitch', 'fishbone-stitch'], 'layer 1 is stitched first');
+assert.equal(sample.why[sample.why.length - 1].stitch, 'four-legged-knot', 'layer 4 last');
 console.log('ok design translator');

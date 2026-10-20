@@ -21,6 +21,8 @@ export interface Part {
   /** Extra colours the part switches to. */
   also?: [name: string, color: string][];
   step: string;
+  /** Thread weight relative to the rest, for outlines worked in fewer strands. */
+  weight?: number;
   make: (o: Op[], th: Thread) => void;
   /** The pattern lines for this part; left out, they are traced from the finished stitches. */
   outline?: V[][];
@@ -236,8 +238,8 @@ export const PROJECTS: Project[] = [lavender(), toadstool(), posy()];
 export const projectBySlug = (slug: string) => PROJECTS.find((p) => p.slug === slug)!;
 
 /** Moves of one part, with its colour on the first move. */
-function partOps(part: Part, k: number): Op[] {
-  const th = T(part.floss[1], W);
+export function partOps(part: Part, k: number): Op[] {
+  const th = T(part.floss[1], W * (part.weight ?? 1));
   const o: Op[] = [];
   part.make(o, th);
   return o.map((op, j) => ({ ...op, th: j === 0 ? op.th ?? th : op.th, cap: j === 0 ? k : undefined }));
