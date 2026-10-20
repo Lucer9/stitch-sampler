@@ -1,0 +1,117 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+}
+
+const { title, description, image = '/og.jpg' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const full = title === 'Sampler' ? 'Sampler — an animated field guide to embroidery stitches' : `${title} · Sampler`;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{full}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#f5efe4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1612" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={full} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap bar">
+        <a class="mark" href="/" aria-label="Sampler, home">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29c6-2 9-10 14-13s10 1 8 6-10 3-9-4" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/><path d="M30 7 13 33" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          <span>Sampler</span>
+        </a>
+        <nav aria-label="Main">
+          <a href="/#stitches">Stitches</a>
+          <a href="/#kit">What you need</a>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="foot">
+      <div class="wrap">
+        <p class="made">
+          Made by <a href="https://www.carlosaguirre.workers.dev">Carlos Aguirre Orozco</a>.
+          Every stitch here is drawn live in your browser from a list of needle moves. No video, no images.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .top {
+    padding: 18px 0;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font: italic 600 24px/1 var(--serif);
+    font-variation-settings: 'SOFT' 100, 'opsz' 48;
+    letter-spacing: -0.01em;
+  }
+  .mark svg {
+    width: 34px;
+    height: 34px;
+  }
+  nav {
+    display: flex;
+    gap: 6px;
+  }
+  nav a {
+    font: 500 15px/1 var(--sans);
+    text-decoration: none;
+    color: var(--ink-2);
+    padding: 12px 12px;
+    border-radius: 999px;
+    transition: background-color 0.18s ease, color 0.18s ease;
+  }
+  nav a:hover {
+    background: var(--paper-2);
+    color: var(--ink);
+  }
+  .foot {
+    margin-top: 120px;
+    padding: 40px 0 56px;
+    border-top: 1px solid var(--line);
+  }
+  .made {
+    max-width: 60ch;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .made a {
+    color: var(--ink);
+    text-underline-offset: 3px;
+    text-decoration-color: var(--accent);
+  }
+  @media (max-width: 560px) {
+    nav a:last-child {
+      display: none;
+    }
+  }
+</style>

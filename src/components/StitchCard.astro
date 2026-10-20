@@ -1,0 +1,86 @@
+---
+import type { Stitch } from '../lib/stitches.ts';
+import Level from './Level.astro';
+
+interface Props {
+  s: Stitch;
+  n: number;
+  label?: string;
+}
+
+const { s, n, label } = Astro.props;
+const teeth = 22;
+const depth = 2.4;
+const pts: string[] = [];
+for (let i = 0; i < teeth; i++) pts.push(`${(i / teeth) * 100}% ${i % 2 ? depth : 0}%`);
+for (let i = 0; i < teeth; i++) pts.push(`${i % 2 ? 100 - depth : 100}% ${(i / teeth) * 100}%`);
+for (let i = 0; i < teeth; i++) pts.push(`${100 - (i / teeth) * 100}% ${i % 2 ? 100 - depth : 100}%`);
+for (let i = 0; i < teeth; i++) pts.push(`${i % 2 ? depth : 0}% ${100 - (i / teeth) * 100}%`);
+const pinked = `polygon(${pts.join(',')})`;
+---
+<a class="card" href={`/stitches/${s.slug}/`}>
+  <span class="swh">
+    <span class="sw" style={`clip-path:${pinked}`}>
+      <canvas data-swatch={s.slug} aria-hidden="true" style={`view-transition-name:hoop-${s.slug}`}></canvas>
+    </span>
+  </span>
+  <span class="txt">
+    {label && <span class="eyebrow">{label}</span>}
+    <span class="name"><span class="num">{String(n).padStart(2, '0')}</span> {s.name}</span>
+    <span class="use">{s.use}</span>
+    <Level level={s.level} />
+  </span>
+</a>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 12px 12px 18px;
+    border-radius: 18px;
+    text-decoration: none;
+    color: inherit;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+  }
+  .swh {
+    display: block;
+    filter: drop-shadow(0 2px 2px rgba(60, 35, 10, 0.22));
+  }
+  .sw {
+    display: block;
+    aspect-ratio: 1;
+    background: #e3d6bc;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .txt {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 4px;
+  }
+  .name {
+    font: 560 21px/1.15 var(--serif);
+    font-variation-settings: 'SOFT' 60, 'opsz' 36;
+    letter-spacing: -0.01em;
+  }
+  .num {
+    font-size: 15px;
+    margin-right: 2px;
+  }
+  .use {
+    color: var(--ink-2);
+    font-size: 15px;
+    line-height: 1.45;
+    margin-bottom: 4px;
+  }
+</style>

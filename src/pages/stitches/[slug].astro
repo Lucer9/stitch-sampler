@@ -1,0 +1,561 @@
+---
+import Base from '../../layouts/Base.astro';
+import Level from '../../components/Level.astro';
+import StitchCard from '../../components/StitchCard.astro';
+import { STITCHES, type Stitch } from '../../lib/stitches.ts';
+
+export function getStaticPaths() {
+  return STITCHES.map((s, i) => ({ params: { slug: s.slug }, props: { s, i } }));
+}
+
+interface Props {
+  s: Stitch;
+  i: number;
+}
+
+const { s, i } = Astro.props;
+const prev = STITCHES[i - 1];
+const next = STITCHES[i + 1];
+const n = String(i + 1).padStart(2, '0');
+const description = `${s.name}: ${s.use} An animated, step-by-step guide that shows the needle, the front and the back of the fabric.`;
+---
+<Base title={s.name} description={description}>
+  <article class="wrap stitch" data-player data-slug={s.slug}>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/#stitches">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        All stitches
+      </a>
+      <span class="eyebrow">{s.family} · <span class="num">{n}</span> of 25</span>
+    </nav>
+
+    <div class="body">
+    <header class="head">
+      <h1>{s.name}</h1>
+      <div class="meta">
+        <Level level={s.level} />
+        {s.aka && <span class="aka">Also called {s.aka.toLowerCase()}</span>}
+      </div>
+      <p class="use">{s.use}</p>
+    </header>
+
+    <section class="stage" aria-label={`${s.name}, animated`}>
+      <div class="hoopbox">
+        <div class="flipper">
+          <canvas class="hoop" role="img" aria-label={`${s.name} being stitched on linen in an embroidery hoop. ${s.steps.join(' ')}`} style={`view-transition-name:hoop-${s.slug}`}></canvas>
+        </div>
+        <p class="badge" aria-hidden="true">Back of the fabric</p>
+        <p class="prompt" aria-live="polite"></p>
+        <div class="dots"></div>
+      </div>
+
+      <div class="now">
+        <p class="now-n eyebrow">Step 1 of {s.steps.length}</p>
+        <p class="now-t" aria-live="off">{s.steps[0]}</p>
+      </div>
+
+      <div class="controls" role="group" aria-label="Playback">
+        <button type="button" class="ic" data-act="restart" aria-label="Restart" title="Restart">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4.5H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="ic" data-act="prev" aria-label="Previous move" title="Previous move (←)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M18 6l-8 6 8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="ic play" data-act="play" aria-label="Play" title="Play / pause (space)" data-state="paused">
+          <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13M16 5.5v13" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>
+          <svg class="i-replay" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v4.5H9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="ic" data-act="next" aria-label="Next move" title="Next move (→)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M6 6l8 6-8 6z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </button>
+        <input class="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline" />
+        <div class="speed" role="group" aria-label="Speed">
+          <button type="button" data-speed="0.5" aria-pressed="false">½×</button>
+          <button type="button" data-speed="1" aria-pressed="true">1×</button>
+          <button type="button" data-speed="2" aria-pressed="false">2×</button>
+        </div>
+      </div>
+
+      <div class="modes">
+        <button type="button" class="mode" data-act="flip" aria-pressed="false" title="Flip the hoop (F)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M8 7 4 12l4 5M16 7l4 5-4 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Flip to the back</span>
+        </button>
+        {s.knot && (
+          <button type="button" class="mode" data-act="side" aria-pressed="false" title="Side view (S)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15h18M3 18.5h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="10.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            <span>Side view</span>
+          </button>
+        )}
+        <button type="button" class="mode" data-act="practice" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/></svg>
+          <span>Try it yourself</span>
+        </button>
+      </div>
+
+      {s.knot && (
+        <figure class="sidebox" hidden>
+          <canvas class="side" aria-hidden="true"></canvas>
+          <figcaption>A cut through the fabric. Watch the wraps slide down the needle and settle on top.</figcaption>
+        </figure>
+      )}
+    </section>
+
+    <aside class="guide">
+      <h2 class="eyebrow">How to</h2>
+      <ol class="steps">
+        {s.steps.map((step, k) => (
+          <li>
+            <button type="button" data-step={k} data-on={k === 0 ? '' : undefined}>
+              <span class="k">{k + 1}</span>
+              <span>{step}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div class="notes">
+        <div class="note">
+          <h3>Tip</h3>
+          <p>{s.tip}</p>
+        </div>
+        <div class="note warn">
+          <h3>Watch out</h3>
+          <p>{s.watch}</p>
+        </div>
+      </div>
+      <p class="keys"><kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> step · <kbd>F</kbd> flip{s.knot && <> · <kbd>S</kbd> side view</>}</p>
+    </aside>
+    </div>
+
+    <nav class="pager" aria-label="More stitches">
+      {prev ? <StitchCard s={prev} n={i} label="Previous" /> : <span />}
+      {next ? <StitchCard s={next} n={i + 2} label="Next" /> : <span />}
+    </nav>
+  </article>
+</Base>
+
+<script>
+  import { mountPlayer } from '../../lib/player.ts';
+  import { mountSwatches } from '../../lib/swatch.ts';
+  document.fonts.ready.then(() => {
+    mountPlayer();
+    mountSwatches();
+  });
+</script>
+
+<style>
+  .stitch {
+    padding-top: 8px;
+  }
+  .body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'stage head'
+      'stage guide';
+    column-gap: clamp(32px, 5vw, 72px);
+  }
+  .crumbs {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .crumbs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding-right: 10px;
+    font: 500 15px/1 var(--sans);
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--ink);
+  }
+  .crumbs svg {
+    width: 20px;
+    height: 20px;
+  }
+  .head {
+    grid-area: head;
+    display: grid;
+    gap: 14px;
+    margin-bottom: 28px;
+    max-width: 760px;
+  }
+  h1 {
+    font-size: clamp(2.6rem, 5.2vw, 4.2rem);
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+  }
+  .aka {
+    font: italic 400 16px/1 var(--serif);
+    color: var(--ink-2);
+  }
+  .use {
+    font-size: 19px;
+    color: var(--ink-2);
+    max-width: 52ch;
+  }
+  .stage {
+    grid-area: stage;
+    align-self: start;
+    position: sticky;
+    top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .hoopbox {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: -36px auto -18px;
+  }
+  .flipper {
+    transform-style: preserve-3d;
+  }
+  .hoop {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+  .badge,
+  .prompt {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font: 600 13px/1.2 var(--sans);
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .badge {
+    bottom: 9%;
+    background: rgba(42, 32, 25, 0.82);
+    color: #fbf4e8;
+    opacity: 0;
+  }
+  [data-view='back'] .badge {
+    opacity: 1;
+  }
+  .prompt {
+    top: 12%;
+    background: #fffaf0;
+    color: #2a2019;
+    box-shadow: 0 6px 18px -8px rgba(60, 35, 10, 0.5);
+    opacity: 0;
+  }
+  .prompt.on {
+    opacity: 1;
+  }
+  .dots :global(button) {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+  }
+  .now {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .now-t {
+    font: 450 clamp(19px, 2.2vw, 23px)/1.35 var(--serif);
+    font-variation-settings: 'SOFT' 50, 'opsz' 28;
+    max-width: 40ch;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+  }
+  .ic:hover {
+    background: var(--paper-2);
+  }
+  .ic:active {
+    transform: scale(0.94);
+  }
+  .ic svg {
+    width: 20px;
+    height: 20px;
+  }
+  .play {
+    width: 52px;
+    height: 52px;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .play:hover {
+    background: var(--ink);
+  }
+  .play svg {
+    width: 22px;
+    height: 22px;
+  }
+  .play svg {
+    display: none;
+  }
+  .play[data-state='paused'] .i-play,
+  .play[data-state='playing'] .i-pause,
+  .play[data-state='ended'] .i-replay {
+    display: block;
+  }
+  .scrub {
+    flex: 1;
+    min-width: 40px;
+    margin: 0 8px;
+    accent-color: var(--accent);
+    height: 44px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .speed {
+    display: flex;
+    flex: none;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--paper-2);
+  }
+  .speed button {
+    min-width: 40px;
+    height: 38px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font: 600 13px/1 var(--sans);
+    cursor: pointer;
+  }
+  .speed button[aria-pressed='true'] {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(60, 35, 10, 0.18);
+  }
+  .modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px 0 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font: 600 14px/1 var(--sans);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .mode:hover {
+    border-color: var(--ink-3);
+  }
+  .mode[aria-pressed='true'] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .mode svg {
+    width: 20px;
+    height: 20px;
+  }
+  .sidebox {
+    margin: 4px 0 0;
+    padding: 10px 10px 14px;
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+  }
+  .side {
+    display: block;
+    width: 100%;
+    aspect-ratio: 2.3;
+  }
+  .sidebox figcaption {
+    padding: 4px 8px 0;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .guide {
+    grid-area: guide;
+    align-self: start;
+    display: grid;
+    gap: 18px;
+  }
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+  }
+  .steps button {
+    display: flex;
+    gap: 14px;
+    width: 100%;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--ink-2);
+    font: 400 16px/1.45 var(--sans);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .steps button:hover {
+    background: var(--paper-2);
+  }
+  .steps button[data-on] {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .k {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    font: 600 13px/1 var(--sans);
+    color: var(--ink-3);
+    transition: all 0.2s ease;
+  }
+  [data-on] .k {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .notes {
+    display: grid;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .note {
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 1.5px dashed var(--line);
+  }
+  .note h3 {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+  .note p {
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  .note.warn h3 {
+    color: var(--accent);
+  }
+  .keys {
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  kbd {
+    display: inline-block;
+    min-width: 22px;
+    padding: 2px 6px;
+    margin: 0 1px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    font: 600 12px/1.3 var(--sans);
+    text-align: center;
+    color: var(--ink-2);
+  }
+  .pager {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 300px));
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 80px;
+  }
+  @media (max-width: 900px) {
+    .body {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      grid-template-areas: 'head' 'stage' 'guide';
+    }
+    .stage {
+      position: static;
+    }
+    .guide {
+      margin-top: 40px;
+    }
+    .hoopbox {
+      margin: -16px auto -8px;
+    }
+    .now {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      display: grid;
+      gap: 8px;
+      min-height: 88px;
+    }
+  }
+  @media (max-width: 560px) {
+    .controls {
+      flex-wrap: wrap;
+      border-radius: 26px;
+      justify-content: center;
+    }
+    .scrub {
+      order: 9;
+      flex-basis: 100%;
+      margin: 0 10px;
+    }
+    .keys {
+      display: none;
+    }
+    .pager {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+  }
+</style>

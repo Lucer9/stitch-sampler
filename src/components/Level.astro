@@ -1,0 +1,13 @@
+---
+interface Props {
+  level: 1 | 2 | 3;
+}
+const { level } = Astro.props;
+const label = ['Beginner', 'Intermediate', 'Tricky'][level - 1];
+---
+<span class="level">
+  <svg viewBox="0 0 34 6" aria-hidden="true">
+    {[0, 1, 2].map((i) => <line x1={1 + i * 12} y1="3" x2={9 + i * 12} y2="3" class={i < level ? 'on' : ''} />)}
+  </svg>
+  {label}
+</span>
